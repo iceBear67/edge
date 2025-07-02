@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    id("io.freefair.lombok") version libs.versions.lombok
+}
+
+allprojects {
+    group = property("group")
+    version = property("version")
+    if (this != project) {
+        configureModules(project)
+    }
+}
+
+def configureModules(Project project) {
+    project.with {
+        apply plugin: 'java'
+        apply plugin: 'java-library'
+        apply plugin: 'io.freefair.lombok'
+        repositories {
+            mavenLocal() // for testing
+            mavenCentral()
+        }
+        configureJava(project)
+    }
+}
+
+def configureJava(Project project){
+    project.with {
+        def targetJavaVersion = Integer.parseInt(getProperty("targetJava") as String)
+        java {
+            def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+            sourceCompatibility = javaVersion
+            targetCompatibility = javaVersion
+            if (JavaVersion.current() < javaVersion) {
+                toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+            }
+        }
+        tasks.withType(JavaCompile).configureEach {
+            if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+                options.release = targetJavaVersion
+            }
+        }
+        test {
+            useJUnitPlatform()
+        }
+
+        dependencies {
+            testImplementation platform('org.junit:junit-bom:5.12.0')
+            testImplementation 'org.junit.jupiter:junit-jupiter'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        }
+    }
+
+}

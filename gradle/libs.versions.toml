@@ -1,0 +1,13 @@
+[versions]
+jackson = "2.18.0"
+polyglot = "24.2.1"
+lombok = "8.12.2.1"
+slf4j = "2.0.16"
+vertx = "5.0.1"
+
+[libraries]
+graal-polyglot = { module = "org.graalvm.polyglot:polyglot", version.ref = "polyglot" }
+graal-js = { module = "org.graalvm.polyglot:js", version.ref = "polyglot" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
+vertx-core = { module = "io.vertx:vertx-core", version.ref = "vertx" }

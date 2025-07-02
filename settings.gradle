@@ -1,0 +1,9 @@
+import java.nio.file.Files
+
+rootProject.name = 'edge'
+
+include Files.list(rootProject.projectDir.toPath())
+        .filter {
+            Files.isDirectory(it) && Files.exists(it.resolve("build.gradle"))
+        }.map {it.fileName.toString()}
+        .toList()

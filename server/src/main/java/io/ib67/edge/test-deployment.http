@@ -1,0 +1,28 @@
+### GET request to example server
+POST http://localhost:8081/deploy
+Content-Type: application/json
+
+{
+  "name" : "test",
+  "version" : "0.0.1",
+  "source" : {
+    "name" : "test.mjs",
+    "mime" : null,
+    "file" : null,
+    "language" : "js",
+    "type" : "string",
+    "data" : "function handleRequest(request) {\n    request.response().end(\"hello\");\n}\nexport {\n  handleRequest\n};\n"
+  },
+  "options" : [ {
+    "type" : "context_option",
+    "key" : "js.esm-eval-returns-exports",
+    "value" : "true"
+  }, {
+    "type" : "fs_access",
+    "prefix" : "file:///home/icybear/IdeaProjects/edge/server/",
+    "readOnly" : true
+  } ]
+}
+###
+
+GET test.localhost:8080
