@@ -1,27 +1,29 @@
 package io.ib67.edge;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.ib67.edge.script.worker.ScriptWorkerFactory;
+import io.ib67.edge.script.ContextOptionParser;
+import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
+import io.ib67.edge.worker.ScriptWorker;
 import io.ib67.edge.worker.Worker;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
-import org.graalvm.polyglot.Engine;
+import lombok.extern.slf4j.Slf4j;
 
+import java.nio.file.FileSystems;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class ServerVerticle extends AbstractVerticle {
     protected final Map<String, Worker> workers = new HashMap<>();
     protected final ObjectMapper mapper = new ObjectMapper();
-    protected final Engine engine;
-    protected final ScriptWorkerFactory workerFactory;
+    protected final ScriptRuntime runtime;
 
-    public ServerVerticle(Engine engine) {
-        this.engine = engine;
-        this.workerFactory = new ScriptWorkerFactory(engine);
+    public ServerVerticle(ScriptRuntime contextFactory) {
+        this.runtime = contextFactory;
     }
 
     @Override
@@ -34,7 +36,9 @@ public class ServerVerticle extends AbstractVerticle {
     }
 
     public void deploy(Deployment deployment) {
-        var worker = workerFactory.create(deployment);
+        var scriptContext = runtime.create(deployment.source(), new ContextOptionParser(FileSystems.getDefault()).parse(deployment.options()));
+        var worker = new ScriptWorker(scriptContext, () ->
+                log.info("ScriptWorker " + deployment.name() + " v" + deployment.version() + " is shutting down..."));
         workers.put(deployment.name().toLowerCase(), worker);
         vertx.deployVerticle(worker);
     }
@@ -53,9 +57,9 @@ public class ServerVerticle extends AbstractVerticle {
         }
         var prefix = host.substring(0, firstDot);
         var worker = workers.get(prefix.toLowerCase());
-        if(worker != null) {
+        if (worker != null) {
             worker.handleRequest(getVertx(), httpServerRequest);
-        }else{
+        } else {
             httpServerRequest.response().setStatusCode(404);
             httpServerRequest.response().end();
         }

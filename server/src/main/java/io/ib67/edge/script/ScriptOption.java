@@ -23,7 +23,4 @@ public sealed interface ScriptOption {
     record ContextOption(String key, String value) implements ScriptOption {
 
     }
-    // unserializable.
-    record CustomOption(UnaryOperator<Context.Builder> operator) implements ScriptOption {
-    }
 }

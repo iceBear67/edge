@@ -1,18 +1,18 @@
 package io.ib67.edge;
 
+import io.ib67.edge.script.ScriptRuntime;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.graalvm.polyglot.Engine;
 
 import java.io.IOException;
 
 @Slf4j
 public class DebugServerVerticle extends ServerVerticle {
-    public DebugServerVerticle(Engine engine) {
+    public DebugServerVerticle(ScriptRuntime engine) {
         super(engine);
     }
 

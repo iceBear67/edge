@@ -11,12 +11,14 @@ Discussion: [Telegram](https://t.me/kalculos_hub)
   - [x] Restricted IO Access (not tested yet)
   - [ ] More configurable runtime.
 - Regular Abilities
+  - [ ] Multiple language support 
   - Auto-scaling up by sharing deployments
     - [ ] Project modularize.
   - Plugins
     - [ ] Autoconfigured database table and JDBC connection for guest code.
     - [ ] Autoconfigured Redis connection for guest code.
 - Security Features (but we are not intended for sandboxes.)
+  - [ ] From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED`
   - [ ] Isolation of trusted codes "libraries" and guest code.
     - Thus, Java world is only accessible to "libraries" from host.
   - [ ] Resource limitation

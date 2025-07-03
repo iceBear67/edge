@@ -4,7 +4,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.io.FileSystem;
 import org.graalvm.polyglot.io.IOAccess;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -17,7 +17,7 @@ public class ContextOptionParser {
         this.readOnlyHostFs = FileSystem.newReadOnlyFileSystem(this.hostFs);
     }
 
-    public UnaryOperator<Context.Builder> parse(List<ScriptOption> options) {
+    public UnaryOperator<Context.Builder> parse(Collection<? extends ScriptOption> options) {
         Objects.requireNonNull(options);
         return context -> {
             var fsSelectors = options.stream()
@@ -30,8 +30,6 @@ public class ContextOptionParser {
                             FileSystem.newCompositeFileSystem(
                                     FileSystem.newDenyIOFileSystem(), fsSelectors.toArray(new FileSystem.Selector[0]))
                     ).build());
-            options.stream().filter(it -> it instanceof ScriptOption.CustomOption)
-                    .forEach(it -> ((ScriptOption.CustomOption) it).operator().apply(context));
             options.stream().filter(it -> it instanceof ScriptOption.ContextOption)
                     .forEach(it-> context.option(((ScriptOption.ContextOption) it).key(), ((ScriptOption.ContextOption) it).value()));
             return context;
