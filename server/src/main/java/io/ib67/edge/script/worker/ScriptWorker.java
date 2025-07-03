@@ -5,6 +5,7 @@ import io.ib67.edge.script.ScriptContext;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.ib67.edge.worker.Worker;
 import io.vertx.core.eventbus.Message;
+import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 
 /**
@@ -21,6 +22,11 @@ public class ScriptWorker extends Worker {
         this.source = source;
         var exportedFunctions = context.eval(source);
         handler = exportedFunctions.getMember("handleRequest").as(RequestHandler.class);
+    }
+
+    @Override
+    public void start() {
+        super.start();
     }
 
     @Override
