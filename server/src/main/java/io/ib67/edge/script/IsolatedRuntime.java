@@ -1,5 +1,6 @@
 package io.ib67.edge.script;
 
+import com.google.common.jimfs.Jimfs;
 import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
 import io.ib67.edge.script.locator.LibraryLocator;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -22,33 +24,52 @@ public class IsolatedRuntime extends ScriptRuntime {
             IncrementalModuleContext scriptContext,
             StubLibraryLocator stubLocator
     ) implements AutoCloseable {
+        // todo uniformed thread local management (lifecycle) to avoid memory leak
         @Override
         public void close() throws Exception {
             scriptContext.close();
         }
     }
 
-    protected static final String CACHE_DIR =
-            System.getProperty("edge.isolatedruntime.stub.cachedir", System.getProperty("java.io.tmpdir"));
-    // todo uniformed thread local management (lifecycle) to avoid memory leak
+    //todo write to host CACHE_DIR only when imfs is taking too many resources.
+//    protected static final String CACHE_DIR =
+//            System.getProperty("edge.isolatedruntime.stub.cachedir", System.getProperty("java.io.tmpdir"));
+    protected static final String CACHE_DIR = "/_edge_cache";
     protected final ThreadLocal<TrustedLibraryContext> perThreadPrivileged;
     protected final LibraryLocator libraryLocator;
     protected final FileSystem fs;
+    protected final java.nio.file.FileSystem cacheInMemFs;
 
     public IsolatedRuntime(Engine engine, java.nio.file.FileSystem nioFs, LibraryLocator locator) {
         super(engine);
         this.libraryLocator = locator;
         this.perThreadPrivileged = ThreadLocal.withInitial(this::createPrivilegeContext);
-        this.fs = FileSystem.newFileSystem(nioFs);
+        this.cacheInMemFs = Jimfs.newFileSystem();
+        var cacheGraalFS = FileSystem.newReadOnlyFileSystem(FileSystem.newFileSystem(cacheInMemFs));
+        this.fs = FileSystem.newCompositeFileSystem(
+                FileSystem.newFileSystem(nioFs),
+                FileSystem.Selector.of(
+                        cacheGraalFS, it -> it.normalize().startsWith(CACHE_DIR)
+                )
+        );
     }
 
     protected LibraryStubCache createStubCache(LibraryLocator locator) {
-        var temporyContext = Context.newBuilder().engine(this.engine).build();
+        var temporyContext = Context.newBuilder()
+                .engine(this.engine)
+                .option("js.esm-eval-returns-exports", "true")
+                .allowHostAccess(HostAccess.ALL)
+                .allowHostClassLookup(it -> true)
+                .build();
         var stubCache = new LibraryStubCache(temporyContext, locator);
         temporyContext.close(true);
         return stubCache;
     }
 
+    /**
+     * This run on the ThreadLocal of context thread
+     * @return
+     */
     //todo hot-reload?
     protected TrustedLibraryContext createPrivilegeContext() {
         var context = Context
@@ -57,7 +78,8 @@ public class IsolatedRuntime extends ScriptRuntime {
                 .allowHostAccess(HostAccess.newBuilder().useModuleLookup(lookup()).build())
                 .build();
 
-        var stubLocator = new StubLibraryLocator(Path.of(CACHE_DIR)); //todo versioned solution
+        //todo versioned libraries based on jimfs or wtf
+        var stubLocator = new StubLibraryLocator(cacheInMemFs.getPath(CACHE_DIR));
         var stubCache = createStubCache(this.libraryLocator);
         stubLocator.updateCache(stubCache);
 
@@ -71,6 +93,11 @@ public class IsolatedRuntime extends ScriptRuntime {
         return new TrustedLibraryContext(scriptContext, stubLocator);
     }
 
+    /**
+     * Once a ScriptContext from IsolatedRuntime is initialized, they can ONLY run on THAT thread.
+     * todo fix by providing a map delegate using threadlocal. This may also help versioned library hot reloading
+     * @param binding
+     */
     @Override
     protected void initializeBinding(Value binding) {
         super.initializeBinding(binding);
@@ -83,8 +110,9 @@ public class IsolatedRuntime extends ScriptRuntime {
     protected UnaryOperator<Context.Builder> configureContext() {
         return it -> it.allowIO(IOAccess.newBuilder()
                 .allowHostSocketAccess(false)
-                .fileSystem(new ESModuleFS(this.fs, () -> perThreadPrivileged.get().stubLocator()))
-                .build());
+                .fileSystem(FileSystem.newReadOnlyFileSystem(
+                        new ESModuleFS(this.fs, () -> perThreadPrivileged.get().stubLocator())
+                )).build());
     }
 
     protected static class StubLibraryLocator implements LibraryLocator {
@@ -117,12 +145,10 @@ public class IsolatedRuntime extends ScriptRuntime {
         protected static String generateStub(String scope, List<String> symbols) {
             var stub = new StringBuilder();
             for (String s : symbols) {
-                stub.append("let _").append(s).append("=scope[").append(scope).append("].").append(s).append(";");
+                stub.append("let _").append(s).append("=scope[\"").append(scope).append("\"].").append(s).append(";");
             }
-            stub.append("\nexport {\n");
-            for (String s : symbols) {
-                stub.append("    _").append(s).append(" as ").append(s).append("\n");
-            }
+            stub.append("\nexport {");
+            stub.append(symbols.stream().map(it -> "_" + it + " as " + it).collect(Collectors.joining(",")));
             stub.append("}");
             return stub.toString();
         }
@@ -130,7 +156,7 @@ public class IsolatedRuntime extends ScriptRuntime {
         @Override
         public Path locateRoot(String module) {
             var moduleRoot = cacheRoot.resolve(module);
-            if (!moduleRoot.toAbsolutePath().startsWith(cacheRoot.toAbsolutePath()))
+            if (!moduleRoot.normalize().startsWith(cacheRoot.normalize()))
                 throw new IllegalArgumentException("Module root is out of cache root: " + moduleRoot);
             return moduleRoot;
         }
@@ -144,7 +170,7 @@ public class IsolatedRuntime extends ScriptRuntime {
                 return index;
             }
             Files.createDirectories(index.getParent());
-            Files.writeString(index, generateStub(module, stubCache.getExportedByModule(module)));
+            Files.writeString(index, generateStub(module, stubCache.getSymbolsFromModule(module)));
             generatedStubs.add(module);
             return index;
         }
@@ -176,7 +202,7 @@ public class IsolatedRuntime extends ScriptRuntime {
             return librarySources.keySet();
         }
 
-        public List<String> getExportedByModule(String module) {
+        public List<String> getSymbolsFromModule(String module) {
             if (!exportedSymbols.containsKey(module)) {
                 throw new IllegalArgumentException("Module " + module + " does not exist or does not export anything");
             }

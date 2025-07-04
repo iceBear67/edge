@@ -20,6 +20,11 @@ public class IncrementalModuleContext extends ScriptContext {
         return Collections.unmodifiableMap(moduleExports);
     }
 
+    @Override
+    public Map<String, Value> getExportedMembers() {
+        return moduleExports;
+    }
+
     public Value evalModule(String module, Source source) {
         var result = eval(source);
         if (moduleExports.containsKey(module)) {

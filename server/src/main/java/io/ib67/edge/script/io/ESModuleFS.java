@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 /**
  * This asserts the library locator can be used on delegated fs
  * todo refactor?
+ * TODO test if we can delegate ESModuleFS to a memfs. test what if parsePath returned a JimfsPath, or use composite fs backend
  */
 public class ESModuleFS extends DelegatedFileSystem {
     protected final Supplier<LibraryLocator> locator;
@@ -35,13 +36,24 @@ public class ESModuleFS extends DelegatedFileSystem {
             if (moduleName.isEmpty()) {
                 throw new IllegalArgumentException("module name cannot be empty");
             }
-            var moduleRoot = locator.locateRoot(path.substring(1));
+            path = path.substring(1);
+
             var firstSlash = path.indexOf('/');
             if (firstSlash == -1) {
                 //todo import {} from "@vertx" 的情况下从哪里搜索 import？
-                return moduleRoot;
+                var root = locator.locateRoot(path);
+                if (root == null) {
+                    throw new IllegalArgumentException("cannot find root for module "+path);
+                }
+                return root;
             }
-            var finalPath = locator.locateModule(moduleName, path.substring(firstSlash)).toAbsolutePath();
+            moduleName = path.substring(0, firstSlash);
+            var finalPath = locator.locateModule(moduleName, path.substring(firstSlash + 1));
+            if (finalPath == null) {
+                throw new IllegalArgumentException("path '" + path.substring(firstSlash + 1) + "' in module " + moduleName + " not found");
+            }
+            var moduleRoot = locator.locateRoot(moduleName);
+            finalPath = finalPath.normalize();
             if (!finalPath.startsWith(moduleRoot)) {
                 throw new IllegalArgumentException("invalid module path: " + finalPath);
             }

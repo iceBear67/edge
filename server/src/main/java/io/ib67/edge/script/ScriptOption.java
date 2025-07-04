@@ -2,10 +2,8 @@ package io.ib67.edge.script;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.graalvm.polyglot.Context;
 
 import java.nio.file.Path;
-import java.util.function.UnaryOperator;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
+@Deprecated
 public class ContextOptionParser {
     protected final FileSystem hostFs;
     protected final FileSystem readOnlyHostFs;
@@ -27,7 +28,7 @@ public class ContextOptionParser {
             context.allowIO(IOAccess.newBuilder()
                     .allowHostSocketAccess(false)
                     .fileSystem(
-                            FileSystem.newCompositeFileSystem(
+                            FileSystem.newCompositeFileSystem( //todo this is conflict with current design
                                     FileSystem.newDenyIOFileSystem(), fsSelectors.toArray(new FileSystem.Selector[0]))
                     ).build());
             options.stream().filter(it -> it instanceof ScriptOption.ContextOption)

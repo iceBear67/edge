@@ -4,6 +4,8 @@ polyglot = "24.2.1"
 lombok = "8.12.2.1"
 slf4j = "2.0.16"
 vertx = "5.0.1"
+jimfs = "1.3.0"
+mockito = "5.+"
 
 [libraries]
 graal-polyglot = { module = "org.graalvm.polyglot:polyglot", version.ref = "polyglot" }
@@ -11,3 +13,5 @@ graal-js = { module = "org.graalvm.polyglot:js", version.ref = "polyglot" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
 vertx-core = { module = "io.vertx:vertx-core", version.ref = "vertx" }
+jimfs = { module = "com.google.jimfs:jimfs", version.ref = "jimfs" }
+mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }

@@ -22,6 +22,8 @@ public class ScriptRuntime {
         return it -> it.allowIO(IOAccess.NONE).allowHostAccess(HostAccess.NONE);
     }
 
+
+    //todo the current implementation requires the context to be created on the thread that uses it.
     public ScriptContext create(Source source, UnaryOperator<Context.Builder> operator) {
         var _context = Context.newBuilder().engine(engine);
         _context = configureContext().apply(operator.apply(_context));

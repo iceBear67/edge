@@ -1,3 +1,7 @@
+configurations {
+    mockitoAgent
+}
+
 dependencies {
     api libs.vertx.web
     api libs.vertx.core
@@ -7,5 +11,15 @@ dependencies {
     implementation platform("com.fasterxml.jackson:jackson-bom:${libs.versions.jackson}")
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation libs.jimfs
+    testImplementation libs.mockito
+    mockitoAgent(libs.mockito) {
+        transitive = false
+    }
+}
 
+tasks {
+    test {
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    }
 }

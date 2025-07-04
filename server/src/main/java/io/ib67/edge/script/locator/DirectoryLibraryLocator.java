@@ -25,7 +25,7 @@ public class DirectoryLibraryLocator implements LibraryLocator {
     @Override
     public Path locateRoot(String module) {
         var root = searchRoot.resolve(module);
-        if (!root.toAbsolutePath().startsWith(searchRoot)) {
+        if (!root.normalize().startsWith(searchRoot)) {
             throw new IllegalArgumentException("Path to " + module + " out of search root.");
         }
         if (Files.exists(root)) {
@@ -37,7 +37,7 @@ public class DirectoryLibraryLocator implements LibraryLocator {
     @Override
     public Path locateModule(String module, String file) {
         var path = locateRoot(module).resolve(file);
-        if (!path.toAbsolutePath().startsWith(searchRoot)) {
+        if (!path.normalize().startsWith(searchRoot)) {
             throw new IllegalArgumentException("Path to @" + module + "/" + file + " is out of search root.");
         }
         return path;
