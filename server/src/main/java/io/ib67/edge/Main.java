@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.ib67.edge.config.ServerConfig;
-import io.ib67.edge.script.ModuleRuntime;
+import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
@@ -42,7 +42,7 @@ public class Main {
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraryCache()));
         System.setProperty("edge.isolatedruntime.stub.cachedir", serverConfig.runtime().pathLibraryCache());
-        var runtime = new ModuleRuntime(
+        var runtime = new IsolatedRuntime(
                 engine,
                 FileSystems.getDefault(),
                 new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),

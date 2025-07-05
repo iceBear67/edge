@@ -1,10 +1,8 @@
 package io.ib67.edge.script;
 
-import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.ib67.edge.script.locator.ModuleLocator;
-import io.ib67.edge.test.InfiniteMap;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
 import org.graalvm.polyglot.*;
@@ -73,7 +71,7 @@ public class LibraryStubTest {
     @Test
     public void testCacheDiscoveredLibraries() {
         ModuleLocator locator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache cache = new ModuleRuntime.LibraryStubCache(context, locator);
+        IsolatedRuntime.LibraryStubCache cache = new IsolatedRuntime.LibraryStubCache(context, locator);
 
         assertEquals(Set.of("lib1", "lib2"), cache.discoveredLibraries());
     }
@@ -81,7 +79,7 @@ public class LibraryStubTest {
     @Test
     public void testCacheGetSymbolsFromModule() {
         ModuleLocator locator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache cache = new ModuleRuntime.LibraryStubCache(context, locator);
+        IsolatedRuntime.LibraryStubCache cache = new IsolatedRuntime.LibraryStubCache(context, locator);
 
         assertThrows(IllegalArgumentException.class, () -> cache.getSymbolsFromModule("nonexistent"));
         var lib1Sym = cache.getSymbolsFromModule("lib1");
@@ -96,7 +94,7 @@ public class LibraryStubTest {
     @Test
     public void testCacheLibrarySources() {
         ModuleLocator locator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache cache = new ModuleRuntime.LibraryStubCache(context, locator);
+        IsolatedRuntime.LibraryStubCache cache = new IsolatedRuntime.LibraryStubCache(context, locator);
 
         assertNotNull(cache.getLibrarySources());
         assertTrue(cache.getLibrarySources().containsKey("lib1"));
@@ -110,8 +108,8 @@ public class LibraryStubTest {
     @SneakyThrows
     public void testLocatorLocateModule() {
         ModuleLocator mockLocator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache mockCache = new ModuleRuntime.LibraryStubCache(context, mockLocator);
-        ModuleRuntime.StubModuleLocator locator = new ModuleRuntime.StubModuleLocator(stubCacheDir);
+        IsolatedRuntime.LibraryStubCache mockCache = new IsolatedRuntime.LibraryStubCache(context, mockLocator);
+        IsolatedRuntime.StubModuleLocator locator = new IsolatedRuntime.StubModuleLocator(stubCacheDir);
         locator.updateCache(mockCache);
         var binding = context.getBindings("js");
         var scope = Map.of(
@@ -136,8 +134,8 @@ public class LibraryStubTest {
     @SneakyThrows
     public void testLocatorUpdateCache() {
         ModuleLocator mockLocator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache mockCache = new ModuleRuntime.LibraryStubCache(context, mockLocator);
-        ModuleRuntime.StubModuleLocator locator = new ModuleRuntime.StubModuleLocator(stubCacheDir);
+        IsolatedRuntime.LibraryStubCache mockCache = new IsolatedRuntime.LibraryStubCache(context, mockLocator);
+        IsolatedRuntime.StubModuleLocator locator = new IsolatedRuntime.StubModuleLocator(stubCacheDir);
         locator.updateCache(mockCache);
         var binding = context.getBindings("js");
         var scope = Map.of(
@@ -160,7 +158,7 @@ public class LibraryStubTest {
         Files.writeString(newScript, """
                 export function hello(){}
                 """);
-        locator.updateCache(new ModuleRuntime.LibraryStubCache(context, mockLocator));
+        locator.updateCache(new IsolatedRuntime.LibraryStubCache(context, mockLocator));
         evalExports = getExportedSymbols(locator, "lib1", "additional.mjs");
         assertTrue(evalExports.hasMember("aNumber"));
         assertTrue(evalExports.hasMember("bNumber"));
@@ -181,8 +179,8 @@ public class LibraryStubTest {
     @Test
     public void testLocatorDiscoverLibraries() {
         ModuleLocator mockLocator = new DirectoryModuleLocator(libRoot);
-        ModuleRuntime.LibraryStubCache mockCache = new ModuleRuntime.LibraryStubCache(context, mockLocator);
-        ModuleRuntime.StubModuleLocator locator = new ModuleRuntime.StubModuleLocator(Paths.get("/tmp"));
+        IsolatedRuntime.LibraryStubCache mockCache = new IsolatedRuntime.LibraryStubCache(context, mockLocator);
+        IsolatedRuntime.StubModuleLocator locator = new IsolatedRuntime.StubModuleLocator(Paths.get("/tmp"));
         locator.updateCache(mockCache);
 
         assertEquals(Set.of("lib1", "lib2"), locator.discoverModules());

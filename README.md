@@ -19,7 +19,7 @@ Discussion: [Telegram](https://t.me/kalculos_hub)
     - [ ] Autoconfigured Redis connection for guest code.
 - Security Features (but we are not intended for sandboxes.)
   - [ ] From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED`
-  - [ ] Isolation of trusted codes "libraries" and guest code.
+  - [x] Isolation of trusted codes "libraries" and guest code.
     - Thus, Java world is only accessible to "libraries" from host.
   - [ ] Resource limitation
   - Plugins

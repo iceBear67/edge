@@ -18,8 +18,8 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public class ModuleRuntime extends ScriptRuntime {
-    public record SharedLibraryContext(
+public class IsolatedRuntime extends ScriptRuntime {
+    public record ModuleContext(
             IncrementalModuleContext scriptContext,
             StubModuleLocator stubLocator
     ) implements AutoCloseable {
@@ -34,35 +34,49 @@ public class ModuleRuntime extends ScriptRuntime {
 //    protected static final String CACHE_DIR =
 //            System.getProperty("edge.isolatedruntime.stub.cachedir", System.getProperty("java.io.tmpdir"));
     protected static final String CACHE_DIR = "/_edge_cache";
-    protected final ThreadLocal<SharedLibraryContext> perThreadLibrary;
+    protected final ThreadLocal<ModuleContext> perThreadLibrary;
     protected final ModuleLocator moduleLocator;
     protected final FileSystem fs;
+    protected final Engine trustedEngine;
     protected final java.nio.file.FileSystem cacheInMemFs;
     @Getter
     protected final HostAccess hostAccess;
 
-    public ModuleRuntime(
+    public IsolatedRuntime(java.nio.file.FileSystem nioFs, ModuleLocator moduleLocator) {
+        this(Engine.create(), nioFs, moduleLocator, HostAccess.NONE);
+    }
+
+    public IsolatedRuntime(
             Engine engine,
             java.nio.file.FileSystem nioFs,
             ModuleLocator locator,
             HostAccess defaultAccess
     ) {
         super(engine);
-        this.hostAccess = defaultAccess;
+        this.trustedEngine = Engine.create();
+        // map access is necessary for guest codes to access libraries (in scope[])
+        this.hostAccess = HostAccess.newBuilder(defaultAccess).allowMapAccess(true).build();
         this.moduleLocator = locator;
-        this.perThreadLibrary = ThreadLocal.withInitial(this::createPrivilegeContext);
+        this.perThreadLibrary = ThreadLocal.withInitial(this::createModuleContext);
         this.cacheInMemFs = Jimfs.newFileSystem();
         var cacheGraalFS = FileSystem.newReadOnlyFileSystem(FileSystem.newFileSystem(cacheInMemFs));
         this.fs = FileSystem.newCompositeFileSystem(
                 FileSystem.newFileSystem(nioFs),
-                FileSystem.Selector.of(
-                        cacheGraalFS, it -> it.normalize().startsWith(CACHE_DIR)
-                )
+                FileSystem.Selector.of(cacheGraalFS, it -> it.normalize().startsWith(CACHE_DIR))
         );
     }
 
+    protected Context createContextForModule() {
+        return Context.newBuilder()
+                .option("js.esm-eval-returns-exports", "true")
+                .allowHostClassLookup(any -> true)
+                .allowHostAccess(HostAccess.ALL)
+                .engine(trustedEngine)
+                .build();
+    }
+
     protected LibraryStubCache createStubCache(ModuleLocator locator) {
-        var temporyContext = configureContext().apply(Context.newBuilder()).build();
+        var temporyContext = createContextForModule();
         var stubCache = new LibraryStubCache(temporyContext, locator);
         temporyContext.close(true);
         return stubCache;
@@ -70,12 +84,10 @@ public class ModuleRuntime extends ScriptRuntime {
 
     /**
      * This run on the ThreadLocal of context thread
-     *
-     * @return
      */
     //todo hot-reload?
-    protected SharedLibraryContext createPrivilegeContext() {
-        var context = configureContext().apply(Context.newBuilder()).build();
+    protected ModuleContext createModuleContext() {
+        var context = createContextForModule();
 
         //todo versioned libraries based on jimfs or wtf
         var stubLocator = new StubModuleLocator(cacheInMemFs.getPath(CACHE_DIR));
@@ -89,22 +101,22 @@ public class ModuleRuntime extends ScriptRuntime {
                 scriptContext.evalModule(module, source);
             }
         }
-        return new SharedLibraryContext(scriptContext, stubLocator);
+        return new ModuleContext(scriptContext, stubLocator);
     }
 
     @Override
     protected void initializeBinding(Value binding) {
         super.initializeBinding(binding);
-//        var scope = new LocalModuleMap(perThreadLibrary);
-        binding.putMember("scope", perThreadLibrary.get().scriptContext().getModuleExports());
+        var scope = new LocalModuleMap(perThreadLibrary);
+        binding.putMember("scope", scope);
     }
 
     @Override
     protected UnaryOperator<Context.Builder> configureContext() {
         return it -> it
                 .option("js.esm-eval-returns-exports", "true")
+                //.allowHostClassLookup(any -> true)
                 .allowHostAccess(getHostAccess())
-                .allowHostClassLookup(any -> true)
                 .allowIO(IOAccess.newBuilder()
                         .allowHostSocketAccess(false)
                         .fileSystem(FileSystem.newReadOnlyFileSystem(
@@ -234,9 +246,9 @@ public class ModuleRuntime extends ScriptRuntime {
 
     @SuppressWarnings("unchecked")
     public static class LocalModuleMap extends AbstractMap<String, Object> {
-        protected final ThreadLocal<SharedLibraryContext> contextThreadLocal;
+        protected final ThreadLocal<ModuleContext> contextThreadLocal;
 
-        public LocalModuleMap(ThreadLocal<SharedLibraryContext> contextThreadLocal) {
+        public LocalModuleMap(ThreadLocal<ModuleContext> contextThreadLocal) {
             this.contextThreadLocal = contextThreadLocal;
         }
 

@@ -17,7 +17,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ModuleRuntimeTest {
+class IsolatedRuntimeTest {
     static FileSystem jimfs;
     static Engine engine;
     static Path libraryRoot;
@@ -66,22 +66,24 @@ class ModuleRuntimeTest {
         Files.createDirectories(libPath);
         Files.writeString(libPath.resolve("index.mjs"), libraryCode);
 
-        // create runtime and it will scan that library folder
-        var runtime = new ModuleRuntime(engine, jimfs, new DirectoryModuleLocator(libraryRoot), HostAccess.ALL);
+        // create runtime which will scan libraries from that folder
+        var runtime = new IsolatedRuntime(engine, jimfs, new DirectoryModuleLocator(libraryRoot), HostAccess.newBuilder()
+                .allowMapAccess(true) /* Map access to scope object is required */
+                .build());
 
-//        // ... and the "privileged code" should NOT work
-//        {
-//            // ignore the "unclosed" autocloseable warning.
-//            var context = runtime.create(Source.create("js", ""), it -> it, it -> {
-//            });
-//            context.getScriptContext().getBindings("js").putMember("outputPath", libPath);
-//            assertThrows(PolyglotException.class, () -> context.eval(Source.create("js", privilegedCode)));
-//        }
+        // ... and the "privileged code" should NOT work in isolated runtime
+        {
+            var context = runtime.create(Source.create("js", ""), it -> it, it -> {
+            });
+            context.getScriptContext().getBindings("js").putMember("outputPath", libPath);
+            assertThrows(PolyglotException.class, () -> context.eval(Source.create("js", privilegedCode)));
+            context.close();
+
+        }
         var callLibrarySource = Source.newBuilder("js", """
                 var Java = Java;
                 import { writePrivileged } from "@the_lib/index.mjs";
                 export function test(){writePrivileged(outputPath)}
-//                export function test(){Java.type("java.lang.System").out.println(1);}
                 """, "test.mjs").build();
         var context = runtime.create(callLibrarySource, it -> it, it -> it.putMember("outputPath", outputPath));
         context.getExportedMembers().get("test").executeVoid();
