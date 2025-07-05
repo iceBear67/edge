@@ -1,6 +1,6 @@
 package io.ib67.edge.script.io;
 
-import io.ib67.edge.script.locator.LibraryLocator;
+import io.ib67.edge.script.locator.ModuleLocator;
 import org.graalvm.polyglot.io.FileSystem;
 
 import java.net.URI;
@@ -13,10 +13,10 @@ import java.util.function.Supplier;
  * TODO test if we can delegate ESModuleFS to a memfs. test what if parsePath returned a JimfsPath, or use composite fs backend
  */
 public class ESModuleFS extends DelegatedFileSystem {
-    protected final Supplier<LibraryLocator> locator;
+    protected final Supplier<ModuleLocator> locator;
 
     // the underlying implementation of this library locator can be a thread local.
-    public ESModuleFS(FileSystem delegatedFS, Supplier<LibraryLocator> locator) {
+    public ESModuleFS(FileSystem delegatedFS, Supplier<ModuleLocator> locator) {
         super(delegatedFS);
         this.locator = locator;
     }

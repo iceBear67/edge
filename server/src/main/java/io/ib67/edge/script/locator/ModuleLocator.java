@@ -3,8 +3,8 @@ package io.ib67.edge.script.locator;
 import java.nio.file.Path;
 import java.util.Set;
 
-public interface LibraryLocator {
-    Set<String> discoverLibraries();
+public interface ModuleLocator {
+    Set<String> discoverModules();
 
     /**
      * @throws IllegalArgumentException if it cannot find the root

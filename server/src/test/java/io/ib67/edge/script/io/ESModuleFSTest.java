@@ -1,7 +1,7 @@
 package io.ib67.edge.script.io;
 
 import com.google.common.jimfs.Jimfs;
-import io.ib67.edge.script.locator.LibraryLocator;
+import io.ib67.edge.script.locator.ModuleLocator;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ class ESModuleFSTest {
 
     @Test
     public void testESModuleFS() {
-        var libLocator = mock(LibraryLocator.class);
+        var libLocator = mock(ModuleLocator.class);
         when(libLocator.locateRoot("test")).thenAnswer(it -> Path.of("/test"));
         when(libLocator.locateModule("test", "pathA")).thenAnswer(it -> Path.of("/pathA"));
         when(libLocator.locateModule("test", "pathB")).thenAnswer(it -> Path.of("/test/pathB"));

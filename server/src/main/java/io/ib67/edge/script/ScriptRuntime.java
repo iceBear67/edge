@@ -1,10 +1,10 @@
 package io.ib67.edge.script;
 
 import io.ib67.edge.script.context.ScriptContext;
-import io.ib67.edge.script.locator.LibraryLocator;
 import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.IOAccess;
 
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 public class ScriptRuntime {
@@ -16,23 +16,35 @@ public class ScriptRuntime {
         this.engine = engine;
     }
 
-    protected void initializeBinding(Value binding) {}
-
-    protected UnaryOperator<Context.Builder> configureContext() {
-        return it -> it.allowIO(IOAccess.NONE).allowHostAccess(HostAccess.NONE);
+    protected void initializeBinding(Value binding) {
     }
 
+    protected UnaryOperator<Context.Builder> configureContext() {
+        return it -> it.allowIO(IOAccess.NONE).allowHostAccess(getHostAccess());
+    }
 
+    protected HostAccess getHostAccess() {
+        return HostAccess.NONE;
+    }
+
+    public ScriptContext create(Source source, UnaryOperator<Context.Builder> operator){
+        return create(source, operator, it->{});
+    }
     //todo the current implementation requires the context to be created on the thread that uses it.
-    public ScriptContext create(Source source, UnaryOperator<Context.Builder> operator) {
+    public ScriptContext create(
+            Source source,
+            UnaryOperator<Context.Builder> operator,
+            Consumer<Value> bindingOperator
+    ) {
         var _context = Context.newBuilder().engine(engine);
-        _context = configureContext().apply(operator.apply(_context));
+        _context = configureContext().apply(operator.apply(_context)).allowHostAccess(getHostAccess());
         var gContext = _context.build();
         return new ScriptContext(gContext, source) {
             @Override
             protected void initializeBindings(Value binding) {
                 super.initializeBindings(binding);
                 initializeBinding(binding);
+                bindingOperator.accept(binding);
             }
         };
     }

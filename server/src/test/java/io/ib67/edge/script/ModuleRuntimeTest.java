@@ -1,0 +1,92 @@
+package io.ib67.edge.script;
+
+import com.google.common.jimfs.Jimfs;
+import io.ib67.edge.script.locator.DirectoryModuleLocator;
+import lombok.SneakyThrows;
+import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.io.IOAccess;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ModuleRuntimeTest {
+    static FileSystem jimfs;
+    static Engine engine;
+    static Path libraryRoot;
+
+    @BeforeAll
+    @SneakyThrows
+    static void setupJimfs() {
+        jimfs = Jimfs.newFileSystem();
+        engine = Engine.newBuilder().in(InputStream.nullInputStream()).out(OutputStream.nullOutputStream()).build();
+        libraryRoot = jimfs.getPath("/lib");
+        Files.createDirectories(libraryRoot);
+    }
+
+    @SneakyThrows
+    @AfterAll
+    static void teardownJimfs() {
+        jimfs.close();
+    }
+
+    @Test
+    @SneakyThrows
+    void test() {
+        // make some privileged code
+        var outputPath = jimfs.getPath("/privilegedIO");
+        var privilegedCode = """
+                let Files = java.nio.file.Files;
+                Files.writeString(outputPath, "hello");
+                """;
+        // let's validate that privileged code _actually_ works
+        {
+            var _privileged_context = Context.newBuilder()
+                    .allowIO(IOAccess.ALL)
+                    .allowHostAccess(HostAccess.ALL)
+                    .allowHostClassLookup(className -> true)
+                    .build();
+            _privileged_context.getBindings("js").putMember("outputPath", outputPath);
+            _privileged_context.eval(Source.create("js", privilegedCode));
+            _privileged_context.close(true);
+            assertEquals("hello", Files.readString(outputPath));
+            Files.deleteIfExists(outputPath);
+        }
+
+        // then write it to the library
+        var libraryCode = "export function writePrivileged(outputPath){\n%s\n}".formatted(privilegedCode);
+        var libPath = libraryRoot.resolve("the_lib");
+        Files.createDirectories(libPath);
+        Files.writeString(libPath.resolve("index.mjs"), libraryCode);
+
+        // create runtime and it will scan that library folder
+        var runtime = new ModuleRuntime(engine, jimfs, new DirectoryModuleLocator(libraryRoot), HostAccess.ALL);
+
+//        // ... and the "privileged code" should NOT work
+//        {
+//            // ignore the "unclosed" autocloseable warning.
+//            var context = runtime.create(Source.create("js", ""), it -> it, it -> {
+//            });
+//            context.getScriptContext().getBindings("js").putMember("outputPath", libPath);
+//            assertThrows(PolyglotException.class, () -> context.eval(Source.create("js", privilegedCode)));
+//        }
+        var callLibrarySource = Source.newBuilder("js", """
+                var Java = Java;
+                import { writePrivileged } from "@the_lib/index.mjs";
+                export function test(){writePrivileged(outputPath)}
+//                export function test(){Java.type("java.lang.System").out.println(1);}
+                """, "test.mjs").build();
+        var context = runtime.create(callLibrarySource, it -> it, it -> it.putMember("outputPath", outputPath));
+        context.getExportedMembers().get("test").executeVoid();
+        context.close();
+        assertTrue(Files.exists(outputPath));
+        assertEquals("hello", Files.readString(outputPath));
+    }
+}

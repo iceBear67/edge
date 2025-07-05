@@ -5,13 +5,13 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.ib67.edge.config.ServerConfig;
-import io.ib67.edge.script.IsolatedRuntime;
-import io.ib67.edge.script.ScriptRuntime;
-import io.ib67.edge.script.locator.DirectoryLibraryLocator;
+import io.ib67.edge.script.ModuleRuntime;
+import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.HostAccess;
 
 import java.io.File;
 import java.io.InputStream;
@@ -42,9 +42,11 @@ public class Main {
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraryCache()));
         System.setProperty("edge.isolatedruntime.stub.cachedir", serverConfig.runtime().pathLibraryCache());
-        var runtime = new IsolatedRuntime(
+        var runtime = new ModuleRuntime(
+                engine,
                 FileSystems.getDefault(),
-                new DirectoryLibraryLocator(Path.of(serverConfig.runtime().pathLibraries()))
+                new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
+                HostAccess.ALL
         );
         var serverVerticle = new ServerVerticle(runtime);
         vertx.deployVerticle(serverVerticle);

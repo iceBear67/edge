@@ -7,16 +7,16 @@ import java.nio.file.Path;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DirectoryLibraryLocator implements LibraryLocator {
+public class DirectoryModuleLocator implements ModuleLocator {
     protected final Path searchRoot;
 
-    public DirectoryLibraryLocator(Path searchRoot) {
+    public DirectoryModuleLocator(Path searchRoot) {
         this.searchRoot = searchRoot;
     }
 
     @Override
     @SneakyThrows
-    public Set<String> discoverLibraries() {
+    public Set<String> discoverModules() {
         try (var files = Files.list(searchRoot)) {
             return files.map(it -> it.getFileName().toString()).collect(Collectors.toSet());
         }
