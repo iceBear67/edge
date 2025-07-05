@@ -33,6 +33,7 @@ public class ScriptContext implements AutoCloseable {
                 }
             }
         } catch (RuntimeException e) { //todo maybe a checked exception
+            e.printStackTrace();
             scriptContext.close(true);
             throw e;
         }

@@ -4,6 +4,7 @@ import com.google.common.jimfs.Jimfs;
 import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
 import io.ib67.edge.script.locator.LibraryLocator;
+import io.ib67.edge.util.CrossContext;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.graalvm.polyglot.*;
@@ -16,8 +17,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-
-import static java.lang.invoke.MethodHandles.lookup;
 
 public class IsolatedRuntime extends ScriptRuntime {
     public record TrustedLibraryContext(
@@ -35,17 +34,19 @@ public class IsolatedRuntime extends ScriptRuntime {
 //    protected static final String CACHE_DIR =
 //            System.getProperty("edge.isolatedruntime.stub.cachedir", System.getProperty("java.io.tmpdir"));
     protected static final String CACHE_DIR = "/_edge_cache";
+    protected final Engine trustedEngine;
     protected final ThreadLocal<TrustedLibraryContext> perThreadPrivileged;
     protected final LibraryLocator libraryLocator;
     protected final FileSystem fs;
     protected final java.nio.file.FileSystem cacheInMemFs;
 
-    public IsolatedRuntime(Engine engine, java.nio.file.FileSystem nioFs, LibraryLocator locator) {
-        super(engine);
+    public IsolatedRuntime(java.nio.file.FileSystem nioFs, LibraryLocator locator) {
+        super(Engine.create());
         this.libraryLocator = locator;
         this.perThreadPrivileged = ThreadLocal.withInitial(this::createPrivilegeContext);
         this.cacheInMemFs = Jimfs.newFileSystem();
         var cacheGraalFS = FileSystem.newReadOnlyFileSystem(FileSystem.newFileSystem(cacheInMemFs));
+        this.trustedEngine = Engine.create();
         this.fs = FileSystem.newCompositeFileSystem(
                 FileSystem.newFileSystem(nioFs),
                 FileSystem.Selector.of(
@@ -56,7 +57,7 @@ public class IsolatedRuntime extends ScriptRuntime {
 
     protected LibraryStubCache createStubCache(LibraryLocator locator) {
         var temporyContext = Context.newBuilder()
-                .engine(this.engine)
+                .engine(this.trustedEngine)
                 .option("js.esm-eval-returns-exports", "true")
                 .allowHostAccess(HostAccess.ALL)
                 .allowHostClassLookup(it -> true)
@@ -68,14 +69,16 @@ public class IsolatedRuntime extends ScriptRuntime {
 
     /**
      * This run on the ThreadLocal of context thread
+     *
      * @return
      */
     //todo hot-reload?
     protected TrustedLibraryContext createPrivilegeContext() {
         var context = Context
                 .newBuilder()
-                .engine(this.engine)
-                .allowHostAccess(HostAccess.newBuilder().useModuleLookup(lookup()).build())
+                .engine(this.trustedEngine)
+                .option("js.esm-eval-returns-exports", "true")
+                .allowHostAccess(HostAccess.ALL)
                 .build();
 
         //todo versioned libraries based on jimfs or wtf
@@ -96,6 +99,7 @@ public class IsolatedRuntime extends ScriptRuntime {
     /**
      * Once a ScriptContext from IsolatedRuntime is initialized, they can ONLY run on THAT thread.
      * todo fix by providing a map delegate using threadlocal. This may also help versioned library hot reloading
+     *
      * @param binding
      */
     @Override
@@ -103,12 +107,23 @@ public class IsolatedRuntime extends ScriptRuntime {
         super.initializeBinding(binding);
         var privilegedContext = perThreadPrivileged.get();
         var moduleExports = privilegedContext.scriptContext().getModuleExports();
-        binding.putMember("scope", moduleExports);
+        var scope = new HashMap<String, Map<String, Object>>();
+        for (String s : moduleExports.keySet()) {
+            var libraryContent = new HashMap<String, Object>();
+            var module = moduleExports.get(s);
+            for (String memberKey : module.getMemberKeys()) {
+                libraryContent.put(memberKey, CrossContext.createSharable(module.getMember(memberKey)));
+            }
+            scope.put(s, libraryContent);
+        }
+        binding.putMember("scope", scope);
     }
 
     @Override
     protected UnaryOperator<Context.Builder> configureContext() {
-        return it -> it.allowIO(IOAccess.newBuilder()
+        return it -> it
+                .allowHostAccess(HostAccess.ALL)
+                .allowIO(IOAccess.newBuilder()
                 .allowHostSocketAccess(false)
                 .fileSystem(FileSystem.newReadOnlyFileSystem(
                         new ESModuleFS(this.fs, () -> perThreadPrivileged.get().stubLocator())
@@ -145,7 +160,7 @@ public class IsolatedRuntime extends ScriptRuntime {
         protected static String generateStub(String scope, List<String> symbols) {
             var stub = new StringBuilder();
             for (String s : symbols) {
-                stub.append("let _").append(s).append("=scope[\"").append(scope).append("\"].").append(s).append(";");
+                stub.append("let _").append(s).append("=scope[\"").append(scope).append("\"][\"").append(s).append("\"];");
             }
             stub.append("\nexport {");
             stub.append(symbols.stream().map(it -> "_" + it + " as " + it).collect(Collectors.joining(",")));

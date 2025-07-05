@@ -43,7 +43,6 @@ public class Main {
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraryCache()));
         System.setProperty("edge.isolatedruntime.stub.cachedir", serverConfig.runtime().pathLibraryCache());
         var runtime = new IsolatedRuntime(
-                engine,
                 FileSystems.getDefault(),
                 new DirectoryLibraryLocator(Path.of(serverConfig.runtime().pathLibraries()))
         );

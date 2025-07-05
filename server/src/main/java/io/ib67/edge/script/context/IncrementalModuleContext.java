@@ -21,8 +21,9 @@ public class IncrementalModuleContext extends ScriptContext {
     }
 
     @Override
+    @Deprecated
     public Map<String, Value> getExportedMembers() {
-        return moduleExports;
+        return Collections.unmodifiableMap(moduleExports);
     }
 
     public Value evalModule(String module, Source source) {
