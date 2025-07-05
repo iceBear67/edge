@@ -19,7 +19,6 @@ public class ScriptContext implements AutoCloseable {
     protected final Source source;
 
     //todo regulate scriptContext must have js.esm-eval-returns-exports or factory
-    //todo this constructor should not be public.
     protected ScriptContext(Context scriptContext, Source entrypoint) {
         this.scriptContext = scriptContext;
         this.source = entrypoint;

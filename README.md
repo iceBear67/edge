@@ -18,9 +18,11 @@ Discussion: [Telegram](https://t.me/kalculos_hub)
     - [ ] Autoconfigured database table and JDBC connection for guest code.
     - [ ] Autoconfigured Redis connection for guest code.
 - Security Features (but we are not intended for sandboxes.)
-  - [ ] From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED`
-  - [ ] Isolation of trusted codes "libraries" and guest code.
-    - Thus, Java world is only accessible to "libraries" from host.
+  - [ ] From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED` 
+  - [x] ~~Isolation of trusted codes "libraries" and guest code.~~
+    - ~~Thus, Java world is only accessible to "libraries" from host.~~
+    - _Due to the current limitation of graal polyglot, it's unimplementable. Contexts with value-sharing must also share their Engine, but you can't have contexts whose HostAccess modes are different in one Engine._
+      - Java API for exposing script APIs
   - [ ] Resource limitation
   - Plugins
     - [ ] Built-in rate limiter
