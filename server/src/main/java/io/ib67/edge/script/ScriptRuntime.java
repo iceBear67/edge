@@ -1,6 +1,7 @@
 package io.ib67.edge.script;
 
 import io.ib67.edge.script.context.ScriptContext;
+import io.ib67.edge.script.locator.LibraryLocator;
 import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.IOAccess;
 
