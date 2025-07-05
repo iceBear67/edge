@@ -30,7 +30,7 @@ public class ScriptRuntime {
     public ScriptContext create(Source source, UnaryOperator<Context.Builder> operator){
         return create(source, operator, it->{});
     }
-    //todo the current implementation requires the context to be created on the thread that uses it.
+
     public ScriptContext create(
             Source source,
             UnaryOperator<Context.Builder> operator,

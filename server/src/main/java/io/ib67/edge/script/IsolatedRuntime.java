@@ -46,6 +46,15 @@ public class IsolatedRuntime extends ScriptRuntime {
         this(Engine.create(), nioFs, moduleLocator, HostAccess.NONE);
     }
 
+    public static HostAccess.Builder hostContainerAccess() {
+        return HostAccess.newBuilder()
+                .allowMapAccess(true)
+                .allowListAccess(true)
+                .allowArrayAccess(true)
+                .allowIterableAccess(true)
+                .allowIteratorAccess(true);
+    }
+
     public IsolatedRuntime(
             Engine engine,
             java.nio.file.FileSystem nioFs,

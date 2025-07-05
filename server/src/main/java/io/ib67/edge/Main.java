@@ -42,11 +42,12 @@ public class Main {
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraryCache()));
         System.setProperty("edge.isolatedruntime.stub.cachedir", serverConfig.runtime().pathLibraryCache());
+        log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(
                 engine,
                 FileSystems.getDefault(),
                 new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
-                HostAccess.ALL
+                IsolatedRuntime.hostContainerAccess().build()
         );
         var serverVerticle = new ServerVerticle(runtime);
         vertx.deployVerticle(serverVerticle);

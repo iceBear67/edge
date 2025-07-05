@@ -21,7 +21,6 @@ public class IncrementalModuleContext extends ScriptContext {
     }
 
     @Override
-    @Deprecated
     public Map<String, Value> getExportedMembers() {
         return Collections.unmodifiableMap(moduleExports);
     }
