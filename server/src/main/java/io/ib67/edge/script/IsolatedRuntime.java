@@ -75,7 +75,7 @@ public class IsolatedRuntime extends ScriptRuntime {
         );
     }
 
-    protected Context createContextForModule() {
+    protected Context createPrivilegedContext() {
         return Context.newBuilder()
                 .option("js.esm-eval-returns-exports", "true")
                 .allowHostClassLookup(any -> true)
@@ -85,7 +85,7 @@ public class IsolatedRuntime extends ScriptRuntime {
     }
 
     protected LibraryStubCache createStubCache(ModuleLocator locator) {
-        var temporyContext = createContextForModule();
+        var temporyContext = createPrivilegedContext();
         var stubCache = new LibraryStubCache(temporyContext, locator);
         temporyContext.close(true);
         return stubCache;
@@ -96,7 +96,7 @@ public class IsolatedRuntime extends ScriptRuntime {
      */
     //todo hot-reload?
     protected ModuleContext createModuleContext() {
-        var context = createContextForModule();
+        var context = createPrivilegedContext();
 
         //todo versioned libraries based on jimfs or wtf
         var stubLocator = new StubModuleLocator(cacheInMemFs.getPath(CACHE_DIR));

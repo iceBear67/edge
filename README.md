@@ -11,6 +11,7 @@ Discussion: [Telegram](https://t.me/kalculos_hub)
   - [x] Restricted IO Access (not tested yet)
   - [ ] More configurable runtime.
 - Regular Abilities
+  - [x] Await support for Vert.x Futures.
   - [ ] Multiple language support 
   - Auto-scaling up by sharing deployments
     - [ ] Project modularize.

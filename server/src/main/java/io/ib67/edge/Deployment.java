@@ -17,4 +17,7 @@ public record Deployment(
         Source source,
         List<ScriptOption> options
 ) {
+    public String toHumanReadable() {
+        return name + " v" + version;
+    }
 }

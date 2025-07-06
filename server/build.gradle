@@ -7,7 +7,8 @@ dependencies {
     api libs.vertx.core
     api libs.graal.polyglot
     api libs.graal.js
-    api libs.slf4j.simple
+
+    api libs.bundles.log4j
     implementation platform("com.fasterxml.jackson:jackson-bom:${libs.versions.jackson}")
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

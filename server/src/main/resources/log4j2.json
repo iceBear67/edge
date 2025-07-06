@@ -1,0 +1,38 @@
+{
+  "Configuration": {
+    "Appenders": {
+      "Console": {
+        "name": "CONSOLE",
+        "PatternLayout": {
+          "pattern": "[%d{MM-dd HH:mm:ss}][%-5p] %t: %m%n "
+        }
+      },
+      "RollingFile": [
+        {
+          "name": "FILE",
+          "fileName": "logs/app.log",
+          "filePattern": "logs/server.%d{yyyy-MM-dd}.%i.log",
+          "JsonTemplateLayout": {},
+          "Policies": {
+            "TimeBasedTriggeringPolicy": {}
+          }
+        }
+      ]
+    },
+    "Loggers": {
+      "Root": {
+        "level": "INFO",
+        "AppenderRef": [
+          {
+            "ref": "CONSOLE",
+            "level": "INFO"
+          },
+          {
+            "ref": "FILE",
+            "level": "ERROR"
+          }
+        ]
+      }
+    }
+  }
+}

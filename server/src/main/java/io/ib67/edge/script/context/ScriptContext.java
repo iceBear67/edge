@@ -1,6 +1,7 @@
 package io.ib67.edge.script.context;
 
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
@@ -10,7 +11,7 @@ import org.graalvm.polyglot.Value;
 import java.io.IOException;
 import java.util.*;
 
-@Slf4j
+@Log4j2
 public class ScriptContext implements AutoCloseable {
     @Getter
     protected final Context scriptContext;
@@ -18,8 +19,7 @@ public class ScriptContext implements AutoCloseable {
     protected final Map<String, List<Runnable>> lifecycleHandlers;
     protected final Source source;
 
-    //todo regulate scriptContext must have js.esm-eval-returns-exports or factory
-    //todo this constructor should not be public.
+    //todo extensible module export discovery?
     protected ScriptContext(Context scriptContext, Source entrypoint) {
         this.scriptContext = scriptContext;
         this.source = entrypoint;

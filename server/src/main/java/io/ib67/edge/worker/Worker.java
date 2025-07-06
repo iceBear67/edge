@@ -7,6 +7,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpServerRequest;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Worker 负责处理 eventbus 上订阅的信息以保持总是在同一个线程上。
  */
-@Slf4j
+@Log4j2
 public class Worker extends AbstractVerticle {
     protected static final AtomicInteger COUNTER = new AtomicInteger();
     protected final String consumerId;
@@ -36,7 +37,7 @@ public class Worker extends AbstractVerticle {
         try {
             onClose.run();
         } catch (Throwable e) {
-            log.error(e.getMessage(), e);
+            log.error("Error occurred when closing resources for a worker", e);
         }
         busHandle.unregister();
     }

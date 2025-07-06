@@ -44,3 +44,5 @@ bin/
 
 ### Java debug pid files ###
 **/.attach_pid*
+
+launcher/run/**

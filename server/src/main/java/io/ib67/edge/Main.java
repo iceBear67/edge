@@ -9,6 +9,7 @@ import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.graalvm.polyglot.Engine;
 import org.graalvm.polyglot.HostAccess;
@@ -20,7 +21,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@Slf4j
+@Log4j2
 public class Main {
     private static final String CONFIG_PATH = System.getProperty("EDGE_CONFIG_PATH", "config.json");
 
@@ -40,8 +41,6 @@ public class Main {
                 .options(serverConfig.engineOptions())
                 .build();
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
-        Files.createDirectories(Path.of(serverConfig.runtime().pathLibraryCache()));
-        System.setProperty("edge.isolatedruntime.stub.cachedir", serverConfig.runtime().pathLibraryCache());
         log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(
                 engine,
@@ -49,7 +48,8 @@ public class Main {
                 new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
                 IsolatedRuntime.hostContainerAccess().build()
         );
-        var serverVerticle = new ServerVerticle(runtime);
+        log.info("Deploying server verticle...");
+        var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime);
         vertx.deployVerticle(serverVerticle);
     }
 }

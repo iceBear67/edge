@@ -1,0 +1,39 @@
+plugins {
+    id 'application'
+}
+
+jar {
+    manifest {
+        attributes(Map.of(
+                "Premain-Class", "io.ib67.edge.EdgeTransformerAgent",
+                "Main-Class", "io.ib67.edge.Launcher"
+        ))
+    }
+    application.applicationDistribution.with {
+        it.exclude("**/${jar.archiveFileName}") //todo cannot remove
+        it.from(archiveFile).into("agent/")
+    }
+}
+
+application {
+    mainClass = "io.ib67.edge.Main"
+    applicationName = "edged"
+    applicationDefaultJvmArgs = ["-javaagent:../agent/${jar.archiveFileName.get()}"]
+}
+
+dependencies {
+    api libs.asm
+    runtimeOnly project(":server")
+    testImplementation project(":server")
+}
+tasks {
+    def agentPath = "${jar.archiveFile.get()}"
+    test {
+        dependsOn(jar)
+        jvmArgs += "-javaagent:${agentPath}"
+    }
+    run {
+        workingDir(file("run"))
+        jvmArgs("-javaagent:${agentPath}")
+        }
+    }

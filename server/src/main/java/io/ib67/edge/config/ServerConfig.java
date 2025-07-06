@@ -20,13 +20,11 @@ public record ServerConfig(
 
     public record RuntimeConfig(
             String pathLibraries,
-            String pathLibraryCache,
             Map<String, String> guestContextOptions,
             Map<String, String> hostContextOptions
     ) {
         public RuntimeConfig {
             pathLibraries = pathLibraries == null ? "libraries" : pathLibraries;
-            pathLibraryCache = pathLibraryCache == null ? "libcache" : pathLibraryCache;
             guestContextOptions = guestContextOptions == null ? Map.of() : guestContextOptions;
             hostContextOptions = hostContextOptions == null ? Map.of() : hostContextOptions;
         }

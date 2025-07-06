@@ -10,9 +10,7 @@ import java.util.function.UnaryOperator;
 public class ScriptRuntime {
     protected final Engine engine;
 
-    public ScriptRuntime(
-            Engine engine
-    ) {
+    public ScriptRuntime(Engine engine) {
         this.engine = engine;
     }
 
@@ -33,7 +31,7 @@ public class ScriptRuntime {
 
     public ScriptContext create(
             Source source,
-            UnaryOperator<Context.Builder> operator,
+            UnaryOperator<Context.Builder> operator, //todo consider removal
             Consumer<Value> bindingOperator
     ) {
         var _context = Context.newBuilder().engine(engine);

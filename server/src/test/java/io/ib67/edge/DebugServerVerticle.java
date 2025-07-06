@@ -1,19 +1,21 @@
 package io.ib67.edge;
 
+import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.ScriptRuntime;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
-@Slf4j
+@Log4j2
 public class DebugServerVerticle extends ServerVerticle {
     public DebugServerVerticle(ScriptRuntime engine) {
-        super(engine);
+        super("localhost", 8080, engine);
     }
 
     @Override

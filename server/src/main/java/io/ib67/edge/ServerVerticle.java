@@ -10,20 +10,28 @@ import io.ib67.edge.worker.Worker;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.FileSystems;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
+@Log4j2
 public class ServerVerticle extends AbstractVerticle {
     protected final Map<String, Worker> workers = new HashMap<>();
     protected final ObjectMapper mapper = new ObjectMapper();
+    @Getter
+    protected final String host;
+    @Getter
+    protected final int port;
     protected final ScriptRuntime runtime;
 
-    public ServerVerticle(ScriptRuntime contextFactory) {
-        this.runtime = contextFactory;
+    public ServerVerticle(String host, int port, ScriptRuntime runtime) {
+        this.host = host;
+        this.runtime = runtime;
+        this.port = port;
     }
 
     @Override
@@ -31,14 +39,18 @@ public class ServerVerticle extends AbstractVerticle {
         getVertx().eventBus().registerDefaultCodec(HttpRequestBox.class, new AnyMessageCodec<>(HttpRequestBox.class));
         getVertx().createHttpServer()
                 .requestHandler(this::onRequest)
-                .listen(8080)
-                .onComplete(it -> startPromise.complete());
+                .listen(port, host)
+                .onComplete(it -> {
+                    log.info("Server verticle {} is listening on {}:{}", this.deploymentID(), host, port);
+                    startPromise.complete();
+                });
     }
 
     public void deploy(Deployment deployment) {
+        log.info("Deploying : {}", deployment.toHumanReadable());
         var scriptContext = runtime.create(deployment.source(), new ContextOptionParser(FileSystems.getDefault()).parse(deployment.options()));
         var worker = new ScriptWorker(scriptContext, () ->
-                log.info("ScriptWorker " + deployment.name() + " v" + deployment.version() + " is shutting down..."));
+                log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));
         workers.put(deployment.name().toLowerCase(), worker);
         vertx.deployVerticle(worker);
     }
