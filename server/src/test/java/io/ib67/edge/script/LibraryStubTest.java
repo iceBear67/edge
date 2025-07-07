@@ -1,14 +1,38 @@
+/*
+ *    Copyright 2025 iceBear67 and Contributors
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ */
+
 package io.ib67.edge.script;
 
 import com.google.common.jimfs.Jimfs;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.ib67.edge.script.locator.ModuleLocator;
 import lombok.SneakyThrows;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 import org.junit.jupiter.api.*;
-import org.graalvm.polyglot.*;
 
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
