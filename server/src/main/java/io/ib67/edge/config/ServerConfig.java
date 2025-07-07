@@ -9,6 +9,18 @@ public record ServerConfig(
         Map<String, String> engineOptions,
         RuntimeConfig runtime
 ) {
+    public static ServerConfig defaultConfig() {
+        return new ServerConfig(
+                "localhost",
+                8080,
+                Map.of(),
+                new RuntimeConfig(
+                        "./lib",
+                        Map.of(),
+                        Map.of()
+                )
+        );
+    }
     public ServerConfig {
         Objects.requireNonNull(listenHost);
         if (listenPort < 0 || listenPort > 65535) {

@@ -10,20 +10,17 @@ import io.ib67.edge.script.locator.DirectoryModuleLocator;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import org.graalvm.polyglot.Engine;
-import org.graalvm.polyglot.HostAccess;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Log4j2
 public class Main {
-    private static final String CONFIG_PATH = System.getProperty("EDGE_CONFIG_PATH", "config.json");
+    private static final String CONFIG_PATH = System.getProperty("edge.config", "config.json");
 
     @SneakyThrows
     public static void main(String[] args) {
@@ -33,7 +30,11 @@ public class Main {
                 .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
                 .configure(JsonParser.Feature.IGNORE_UNDEFINED, true)
                 .configure(SerializationFeature.INDENT_OUTPUT, true);
-        var serverConfig = om.readValue(new File(CONFIG_PATH), ServerConfig.class);
+        var configFile = new File(CONFIG_PATH);
+        if (!configFile.exists()) {
+            om.writeValue(configFile, ServerConfig.defaultConfig());
+        }
+        var serverConfig = om.readValue(configFile, ServerConfig.class);
         var vertx = Vertx.vertx();
         var engine = Engine.newBuilder()
                 .in(InputStream.nullInputStream())
@@ -44,10 +45,11 @@ public class Main {
         log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(
                 engine,
-                FileSystems.getDefault(),
                 new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
                 IsolatedRuntime.hostContainerAccess().build()
         );
+        runtime.setHostContextOptions(serverConfig.runtime().hostContextOptions());
+        runtime.setGuestContextOptions(serverConfig.runtime().guestContextOptions());
         log.info("Deploying server verticle...");
         var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime);
         vertx.deployVerticle(serverVerticle);

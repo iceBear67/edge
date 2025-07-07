@@ -9,8 +9,6 @@ import java.util.function.Supplier;
 
 /**
  * This asserts the library locator can be used on delegated fs
- * todo refactor?
- * TODO test if we can delegate ESModuleFS to a memfs. test what if parsePath returned a JimfsPath, or use composite fs backend
  */
 public class ESModuleFS extends DelegatedFileSystem {
     protected final Supplier<ModuleLocator> locator;

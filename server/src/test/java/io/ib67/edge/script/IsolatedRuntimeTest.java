@@ -67,7 +67,7 @@ class IsolatedRuntimeTest {
         Files.writeString(libPath.resolve("index.mjs"), libraryCode);
 
         // create runtime which will scan libraries from that folder
-        var runtime = new IsolatedRuntime(engine, jimfs, new DirectoryModuleLocator(libraryRoot), HostAccess.newBuilder()
+        var runtime = new IsolatedRuntime(engine, new DirectoryModuleLocator(libraryRoot), HostAccess.newBuilder()
                 .allowMapAccess(true) /* Map access to scope object is required */
                 .build());
 

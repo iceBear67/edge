@@ -5,6 +5,7 @@ import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
 import io.ib67.edge.script.locator.ModuleLocator;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.FileSystem;
@@ -36,14 +37,20 @@ public class IsolatedRuntime extends ScriptRuntime {
     protected static final String CACHE_DIR = "/_edge_cache";
     protected final ThreadLocal<ModuleContext> perThreadLibrary;
     protected final ModuleLocator moduleLocator;
-    protected final FileSystem fs;
+    protected final FileSystem guestFS;
     protected final Engine trustedEngine;
     protected final java.nio.file.FileSystem cacheInMemFs;
     @Getter
     protected final HostAccess hostAccess;
+    @Getter
+    @Setter
+    protected Map<String, String> hostContextOptions = new HashMap<>();
+    @Getter
+    @Setter
+    protected Map<String, String> guestContextOptions = new HashMap<>();
 
-    public IsolatedRuntime(java.nio.file.FileSystem nioFs, ModuleLocator moduleLocator) {
-        this(Engine.create(), nioFs, moduleLocator, HostAccess.NONE);
+    public IsolatedRuntime(ModuleLocator moduleLocator) {
+        this(Engine.create(),  moduleLocator, HostAccess.NONE);
     }
 
     public static HostAccess.Builder hostContainerAccess() {
@@ -57,7 +64,6 @@ public class IsolatedRuntime extends ScriptRuntime {
 
     public IsolatedRuntime(
             Engine engine,
-            java.nio.file.FileSystem nioFs,
             ModuleLocator locator,
             HostAccess defaultAccess
     ) {
@@ -68,24 +74,20 @@ public class IsolatedRuntime extends ScriptRuntime {
         this.moduleLocator = locator;
         this.perThreadLibrary = ThreadLocal.withInitial(this::createModuleContext);
         this.cacheInMemFs = Jimfs.newFileSystem();
-        var cacheGraalFS = FileSystem.newReadOnlyFileSystem(FileSystem.newFileSystem(cacheInMemFs));
-        this.fs = FileSystem.newCompositeFileSystem(
-                FileSystem.newFileSystem(nioFs),
-                FileSystem.Selector.of(cacheGraalFS, it -> it.normalize().startsWith(CACHE_DIR))
-        );
+        this.guestFS = FileSystem.newReadOnlyFileSystem(FileSystem.newFileSystem(cacheInMemFs));
     }
 
-    protected Context createPrivilegedContext() {
+    protected Context.Builder createPrivilegedContext() {
         return Context.newBuilder()
+                .options(hostContextOptions)
                 .option("js.esm-eval-returns-exports", "true")
                 .allowHostClassLookup(any -> true)
                 .allowHostAccess(HostAccess.ALL)
-                .engine(trustedEngine)
-                .build();
+                .engine(trustedEngine);
     }
 
     protected LibraryStubCache createStubCache(ModuleLocator locator) {
-        var temporyContext = createPrivilegedContext();
+        var temporyContext = createPrivilegedContext().build();
         var stubCache = new LibraryStubCache(temporyContext, locator);
         temporyContext.close(true);
         return stubCache;
@@ -103,7 +105,7 @@ public class IsolatedRuntime extends ScriptRuntime {
         var stubCache = createStubCache(this.moduleLocator);
         stubLocator.updateCache(stubCache);
 
-        var scriptContext = new IncrementalModuleContext(context);
+        var scriptContext = new IncrementalModuleContext(context.build());
         var librarySources = stubCache.getLibrarySources();
         for (String module : librarySources.keySet()) {
             for (Source source : librarySources.get(module).source()) {
@@ -123,13 +125,14 @@ public class IsolatedRuntime extends ScriptRuntime {
     @Override
     protected UnaryOperator<Context.Builder> configureContext() {
         return it -> it
+                .options(guestContextOptions)
                 .option("js.esm-eval-returns-exports", "true")
                 //.allowHostClassLookup(any -> true)
                 .allowHostAccess(getHostAccess())
                 .allowIO(IOAccess.newBuilder()
                         .allowHostSocketAccess(false)
                         .fileSystem(FileSystem.newReadOnlyFileSystem(
-                                new ESModuleFS(this.fs, () -> perThreadLibrary.get().stubLocator())
+                                new ESModuleFS(this.guestFS, () -> perThreadLibrary.get().stubLocator())
                         )).build());
     }
 

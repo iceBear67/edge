@@ -35,5 +35,5 @@ tasks {
     run {
         workingDir(file("run"))
         jvmArgs("-javaagent:${agentPath}")
-        }
     }
+}

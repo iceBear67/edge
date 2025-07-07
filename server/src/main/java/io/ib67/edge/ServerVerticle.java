@@ -1,7 +1,6 @@
 package io.ib67.edge;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.ib67.edge.script.ContextOptionParser;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
@@ -12,11 +11,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 
-import java.nio.file.FileSystems;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 @Log4j2
 public class ServerVerticle extends AbstractVerticle {
@@ -48,7 +46,7 @@ public class ServerVerticle extends AbstractVerticle {
 
     public void deploy(Deployment deployment) {
         log.info("Deploying : {}", deployment.toHumanReadable());
-        var scriptContext = runtime.create(deployment.source(), new ContextOptionParser(FileSystems.getDefault()).parse(deployment.options()));
+        var scriptContext = runtime.create(deployment.source(), UnaryOperator.identity());
         var worker = new ScriptWorker(scriptContext, () ->
                 log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));
         workers.put(deployment.name().toLowerCase(), worker);
