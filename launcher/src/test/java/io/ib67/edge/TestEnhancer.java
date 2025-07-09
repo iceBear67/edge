@@ -17,9 +17,9 @@
 
 package io.ib67.edge;
 
+import io.ib67.edge.api.Thenable;
 import io.ib67.edge.enhance.AnnotationEnhancer;
 import io.ib67.edge.enhance.EdgeClassEnhancer;
-import io.ib67.edge.mixin.Thenable;
 import io.vertx.core.Future;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;

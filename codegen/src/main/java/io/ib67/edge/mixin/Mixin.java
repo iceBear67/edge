@@ -17,20 +17,13 @@
 
 package io.ib67.edge.mixin;
 
-import io.vertx.core.Future;
-import org.graalvm.polyglot.Value;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-/**
- * this interface will be mixed into {@link io.vertx.core.Future}
- */
-public interface Thenable {
-    @SuppressWarnings("rawtypes")
-    private Future $() {
-        return (Future) this;
-    }
-
-    @SuppressWarnings("unchecked")
-    default void then(Value onResolve, Value onReject) {
-        $().onSuccess(onResolve::executeVoid).onFailure(onReject::executeVoid);
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Mixin {
+    Class<?>[] value();
 }

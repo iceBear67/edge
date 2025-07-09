@@ -30,6 +30,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation libs.jimfs
+
+    compileOnly project(":codegen")
+    annotationProcessor project(":codegen")
     testImplementation libs.mockito
     mockitoAgent(libs.mockito) {
         transitive = false

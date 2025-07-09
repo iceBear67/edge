@@ -39,7 +39,7 @@ public class VertxEnhancer extends ClassVisitor implements Opcodes {
         } else {
             _interfaces = _interfaces == null ? new String[0] : _interfaces;
             var interfaces = Arrays.copyOf(_interfaces, _interfaces.length + 1);
-            interfaces[interfaces.length - 1] = "io/ib67/edge/mixin/Thenable";
+            interfaces[interfaces.length - 1] = "io/ib67/edge/api/Thenable";
             super.visit(version, access, name, signature, superName, interfaces);
         }
     }
