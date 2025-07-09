@@ -11,7 +11,7 @@ Content-Type: application/json
     "file" : null,
     "language" : "js",
     "type" : "string",
-    "data" : "function handleRequest(request) {\n    request.response().end(\"hello\");\n}\nexport {\n  handleRequest\n};\n"
+    "data" : "export function handleRequest(request) {\n    request.response().end(\"hello\");\n}\n"
   },
   "options" : [ {
     "type" : "context_option",

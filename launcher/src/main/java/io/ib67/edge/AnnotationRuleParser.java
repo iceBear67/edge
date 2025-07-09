@@ -166,6 +166,7 @@ public class AnnotationRuleParser {
             case "TYPE" -> AnnotationEnhancer.EnhanceType.CLASS;
             case "METHOD" -> AnnotationEnhancer.EnhanceType.METHOD;
             case "FIELD" -> AnnotationEnhancer.EnhanceType.FIELD;
+            case "TYPE-ALL" -> AnnotationEnhancer.EnhanceType.CLASS_ALL;
             default -> throw new IllegalArgumentException("Unknown type: " + type);
         };
     }

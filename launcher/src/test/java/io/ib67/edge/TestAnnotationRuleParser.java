@@ -27,7 +27,8 @@ public class TestAnnotationRuleParser {
     public void test() {
         var rule = """
                 import java/lang/Override as Override
-                import java/lang/Override2 as Override2
+                # dot syntax is allowed in imports.
+                import java.lang.Override2 as Override2 
                 import io/ib67/edge/enhance/EdgeClassEnhancer as EdgeClassEnhancer
                 import java/util/function/ToIntFunction as ToIntFunction
                 import java/util/function/Supplier as Supplier

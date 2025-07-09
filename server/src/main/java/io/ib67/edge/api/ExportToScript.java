@@ -17,10 +17,10 @@
 
 package io.ib67.edge.api;
 
-import io.vertx.core.http.HttpServerRequest;
+import java.lang.annotation.*;
 
-@FunctionalInterface
-@ExportToScript
-public interface RequestHandler {
-    void handleRequest(HttpServerRequest objectMessage);
+@Target({ElementType.TYPE,ElementType.FIELD,ElementType.METHOD,ElementType.CONSTRUCTOR})
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ExportToScript {
 }

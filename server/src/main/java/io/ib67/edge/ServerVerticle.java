@@ -62,7 +62,6 @@ public class ServerVerticle extends AbstractVerticle {
     }
 
     public void deploy(Deployment deployment) {
-        log.info("Deploying : {}", deployment.toHumanReadable());
         var scriptContext = runtime.create(deployment.source(), UnaryOperator.identity());
         var worker = new ScriptWorker(scriptContext, () ->
                 log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));

@@ -32,8 +32,10 @@ public class EdgeTransformerAgent implements ClassFileTransformer {
         this.enhancer = enhancer;
     }
 
-    public static void premain(String agentArgs, Instrumentation inst) {
+    public static void premain(String agentArgs, Instrumentation inst) throws ClassNotFoundException {
         System.out.println("EdgeTransformerAgent is loaded. CWD: "+ Path.of(".").toAbsolutePath().normalize());
+        Class.forName("org.objectweb.asm.ClassReader"); // resolves classloading deadlock
+        Class.forName("org.objectweb.asm.ClassWriter");
         inst.addTransformer(new EdgeTransformerAgent(EdgeClassEnhancer.create()));
     }
 

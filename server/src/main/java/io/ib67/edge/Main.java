@@ -17,10 +17,10 @@
 
 package io.ib67.edge;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.ib67.edge.api.ExportToScript;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
@@ -42,11 +42,11 @@ public class Main {
     @SneakyThrows
     public static void main(String[] args) {
         log.info("Initializing edge server...");
-        var om = new ObjectMapper()
-                .configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true)
+        var om = JsonMapper.builder()
                 .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
                 .configure(JsonParser.Feature.IGNORE_UNDEFINED, true)
-                .configure(SerializationFeature.INDENT_OUTPUT, true);
+                .configure(SerializationFeature.INDENT_OUTPUT, true)
+                .build();
         var configFile = new File(CONFIG_PATH);
         if (!configFile.exists()) {
             om.writeValue(configFile, ServerConfig.defaultConfig());
@@ -63,12 +63,28 @@ public class Main {
         var runtime = new IsolatedRuntime(
                 engine,
                 new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
-                IsolatedRuntime.hostContainerAccess().build()
+                IsolatedRuntime.hostContainerAccess()
+                        .allowImplementationsAnnotatedBy(ExportToScript.class)
+                        .allowAccessAnnotatedBy(ExportToScript.class)
+                        .build()
         );
         runtime.setHostContextOptions(serverConfig.runtime().hostContextOptions());
         runtime.setGuestContextOptions(serverConfig.runtime().guestContextOptions());
         log.info("Deploying server verticle...");
         var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime);
         vertx.deployVerticle(serverVerticle);
+        if (serverConfig.controlListenPort() < 0) {
+            log.info("Control server has been disabled.");
+            return;
+        }
+        log.info("Deploying control server...");
+        var controlServerVerticle = new ControlServerVerticle(
+                serverConfig.controlListenHost(),
+                serverConfig.controlListenPort(),
+                serverVerticle
+        );
+        vertx.deployVerticle(controlServerVerticle);
+
+
     }
 }

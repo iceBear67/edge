@@ -23,6 +23,8 @@ import java.util.Objects;
 public record ServerConfig(
         String listenHost,
         int listenPort,
+        String controlListenHost,
+        int controlListenPort, // -1 to disable
         Map<String, String> engineOptions,
         RuntimeConfig runtime
 ) {
@@ -30,6 +32,8 @@ public record ServerConfig(
         return new ServerConfig(
                 "localhost",
                 8080,
+                "localhost",
+                8081,
                 Map.of(),
                 new RuntimeConfig(
                         "./lib",

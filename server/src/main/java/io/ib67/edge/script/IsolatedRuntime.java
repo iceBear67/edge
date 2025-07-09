@@ -144,7 +144,6 @@ public class IsolatedRuntime extends ScriptRuntime {
         return it -> it
                 .options(guestContextOptions)
                 .option("js.esm-eval-returns-exports", "true")
-                //.allowHostClassLookup(any -> true)
                 .allowHostAccess(getHostAccess())
                 .allowIO(IOAccess.newBuilder()
                         .allowHostSocketAccess(false)

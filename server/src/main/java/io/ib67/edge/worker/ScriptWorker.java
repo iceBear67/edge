@@ -37,7 +37,7 @@ public class ScriptWorker extends Worker {
         this.context = context;
         var binding = context.getScriptContext().getBindings("js");
         binding.putMember("log", log);
-        handler = context.getExportedMembers().get("handleRequest").as(RequestHandler.class);
+        handler = context.getExportedMembers().get("handleRequest").as(RequestHandler.class); //todo checked exception for possible failure
     }
 
     @Override
@@ -58,7 +58,7 @@ public class ScriptWorker extends Worker {
         try {
             handler.handleRequest(req);
         } catch (Exception throwable) {
-            req.response().setStatusCode(500);
+            req.response().setStatusCode(500).end("Script Server Error");
             log.error("Error handling request {}/{}", req.getHeader("Host"), req.path(), throwable);
         }
     }

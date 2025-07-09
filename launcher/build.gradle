@@ -36,8 +36,6 @@ jar {
 
 }
 
-println(rootProject.layout.projectDirectory)
-
 application {
     mainClass = "io.ib67.edge.Main"
     applicationName = "edged"
@@ -56,6 +54,8 @@ tasks {
         jvmArgs += "-javaagent:${agentPath}"
     }
     run {
+        dependsOn(tasks.jar)
+        file("run").mkdir()
         workingDir(file("run"))
         jvmArgs("-javaagent:${agentPath}")
     }

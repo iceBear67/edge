@@ -4,7 +4,7 @@
       "Console": {
         "name": "CONSOLE",
         "PatternLayout": {
-          "pattern": "[%d{MM-dd HH:mm:ss}][%-5p] %t: %m%n "
+          "pattern": "%d{MM-dd HH:mm:ss} %t [%p] %c{1}: %m%n"
         }
       },
       "RollingFile": [

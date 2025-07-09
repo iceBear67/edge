@@ -17,34 +17,48 @@
 
 package io.ib67.edge;
 
-import io.ib67.edge.script.ScriptRuntime;
-import io.vertx.core.Future;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
-import java.io.IOException;
-
 @Log4j2
-public class DebugServerVerticle extends ServerVerticle {
-    public DebugServerVerticle(ScriptRuntime engine) {
-        super("localhost", 8080, engine);
+@Getter
+public class ControlServerVerticle extends AbstractVerticle {
+    protected final ServerVerticle serverVerticle;
+    @Getter(AccessLevel.PRIVATE)
+    protected final ObjectMapper mapper;
+    protected final String host;
+    protected final int port;
+
+    public ControlServerVerticle(String host, int port, ServerVerticle serverVerticle) {
+        this.serverVerticle = serverVerticle;
+        this.mapper = JsonMapper.builder()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
+        this.host = host;
+        this.port = port;
     }
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
-        var promiseA = Promise.<Void>promise();
-        var promiseB = Promise.promise();
-        super.start(promiseA);
         var router = Router.router(vertx);
         router.post("/deploy").handler(this::onPostDeploy);
         getVertx().createHttpServer()
                 .requestHandler(router)
-                .listen(8081)
-                .onComplete(it -> promiseB.complete());
-        Future.join((Future<?>) promiseA, (Future<?>) promiseB).onComplete(it -> startPromise.complete());
+                .listen(port, host)
+                .onComplete(it -> {
+                    log.info("Control server has been started.");
+                    startPromise.complete();
+                });
+
     }
 
     @SneakyThrows
@@ -53,13 +67,12 @@ public class DebugServerVerticle extends ServerVerticle {
         routingContext.request().bodyHandler(buffer -> {
             try {
                 var deployment = mapper.readValue(buffer.getBytes(), Deployment.class);
-                log.info("Deploying " + deployment.name() + " ver" + deployment.version());
-                deploy(deployment);
+                log.info("Deploying {}", deployment);
+                serverVerticle.deploy(deployment);
                 routingContext.response().end();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                routingContext.fail(e);
             }
         });
     }
-
 }
