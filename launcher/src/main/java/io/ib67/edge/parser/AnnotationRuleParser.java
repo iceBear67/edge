@@ -15,18 +15,16 @@
  *
  */
 
-package io.ib67.edge;
+package io.ib67.edge.parser;
 
-import io.ib67.edge.enhance.AnnotationEnhancer;
+import io.ib67.edge.enhancer.AnnotationEnhancer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 public class AnnotationRuleParser {
-    private final Map<String, String> aliases = new HashMap<>();
-    private String currentAnnotationDescriptor = null;
-    private final List<AnnotationEnhancer.EnhanceRule> rules = new ArrayList<>();
-
     private record SimpleEnhanceRule(
             AnnotationEnhancer.EnhanceType type,
             Predicate<String> name,
@@ -39,11 +37,9 @@ public class AnnotationRuleParser {
         }
     }
 
-    public List<AnnotationEnhancer.EnhanceRule> parse(String input) {
-        rules.clear();
-        aliases.clear();
-        currentAnnotationDescriptor = null;
-
+    public static List<AnnotationEnhancer.EnhanceRule> parse(String input) {
+        String currentAnnotationDescriptor = null;
+        var rules = new ArrayList<AnnotationEnhancer.EnhanceRule>();
         for (String line : input.split("\n")) {
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) {
@@ -70,11 +66,10 @@ public class AnnotationRuleParser {
                 }
             }
         }
-
         return rules;
     }
 
-    private AnnotationEnhancer.EnhanceType parseType(String type) {
+    private static AnnotationEnhancer.EnhanceType parseType(String type) {
         return switch (type.toUpperCase()) {
             case "TYPE" -> AnnotationEnhancer.EnhanceType.CLASS;
             case "METHOD" -> AnnotationEnhancer.EnhanceType.METHOD;

@@ -17,18 +17,22 @@
 
 package io.ib67.edge;
 
-import io.ib67.edge.enhance.AnnotationEnhancer;
-import io.ib67.edge.enhance.EdgeClassEnhancer;
-import io.ib67.edge.enhance.MixinEnhancer;
+import io.ib67.edge.enhancer.AnnotationEnhancer;
+import io.ib67.edge.enhancer.MixinEnhancer;
+import io.ib67.edge.parser.AnnotationRuleParser;
+import io.ib67.edge.parser.MixinParser;
 import lombok.SneakyThrows;
 import org.objectweb.asm.Opcodes;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Path;
 import java.security.ProtectionDomain;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,7 +55,8 @@ public class EdgeTransformerAgent implements ClassFileTransformer, Opcodes {
     }
 
     public static void premain(String agentArgs, Instrumentation inst) throws ClassNotFoundException {
-        System.out.println("EdgeTransformerAgent is loaded. CWD: " + Path.of(".").toAbsolutePath().normalize());
+        if (VERBOSE.contains(VERBOSE_TOPIC_LOAD))
+            System.out.println("EdgeTransformerAgent is loaded. CWD: " + Path.of(".").toAbsolutePath().normalize());
         Class.forName("org.objectweb.asm.ClassReader"); // resolves classloading deadlock
         Class.forName("org.objectweb.asm.ClassWriter");
         inst.addTransformer(new EdgeTransformerAgent(createEnhancer()));
@@ -59,31 +64,24 @@ public class EdgeTransformerAgent implements ClassFileTransformer, Opcodes {
 
     @SneakyThrows
     private static EdgeClassEnhancer createEnhancer() {
-        var classLoader = EdgeClassEnhancer.class.getClassLoader();
         var enhancer = new EdgeClassEnhancer();
-        try (var in = ANNOTATION_RULE_PATH == null ?
-                classLoader.getResourceAsStream("edge_annotation_rules.txt")
-                : new FileInputStream(ANNOTATION_RULE_PATH)) {
-            if (in == null) {
-                System.err.println("Failed to load annotation rules");
-            } else {
-                var ruleData = in.readAllBytes();
-                var rule = new AnnotationRuleParser().parse(new String(ruleData));
-                if (VERBOSE.contains(VERBOSE_TOPIC_LOAD)) System.out.println("Loaded annotation " + rule.size() + " rules");
-                enhancer.addTransformer(cw -> new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE.contains(VERBOSE_TOPIC_ANNOTATE)));
-            }
+        try (var in = readFileOrResource(ANNOTATION_RULE_PATH, "edge_annotation_rules.txt")) {
+            var ruleData = in.readAllBytes();
+            var rule = AnnotationRuleParser.parse(new String(ruleData));
+            if (VERBOSE.contains(VERBOSE_TOPIC_LOAD))
+                System.out.println("Loaded annotation " + rule.size() + " rules");
+            enhancer.addTransformer(cw -> new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE.contains(VERBOSE_TOPIC_ANNOTATE)));
         }
-        try (var in = MIXIN_PATH == null
-                ? classLoader.getResourceAsStream("META-INF/mixins.txt")
-                : new FileInputStream(MIXIN_PATH)) {
-            if (in == null) {
-                System.err.println("Failed to load mixins");
-            } else {
-                var mixinData = MixinParser.parse(new String(in.readAllBytes()));
-                enhancer.addTransformer(cw -> new MixinEnhancer(mixinData, ASM9, cw));
-            }
+        try (var in = readFileOrResource(MIXIN_PATH, "META-INF/mixins.txt")) {
+            var mixinData = MixinParser.parse(new String(in.readAllBytes()));
+            enhancer.addTransformer(cw -> new MixinEnhancer(mixinData, ASM9, cw).setVerbose(VERBOSE.contains(VERBOSE_TOPIC_MIXIN)));
         }
         return enhancer;
+    }
+
+    private static InputStream readFileOrResource(String path, String resource) throws FileNotFoundException {
+        return Objects.requireNonNull(path == null ? EdgeClassEnhancer.class.getClassLoader().getResourceAsStream(resource)
+                : new FileInputStream(path), "Failed to load " + resource + " or " + path);
     }
 
     @Override

@@ -15,7 +15,7 @@
  *
  */
 
-package io.ib67.edge;
+package io.ib67.edge.parser;
 
 import java.util.HashMap;
 import java.util.HashSet;

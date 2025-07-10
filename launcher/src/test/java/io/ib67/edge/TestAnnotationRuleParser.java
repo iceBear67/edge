@@ -17,7 +17,8 @@
 
 package io.ib67.edge;
 
-import io.ib67.edge.enhance.AnnotationEnhancer;
+import io.ib67.edge.enhancer.AnnotationEnhancer;
+import io.ib67.edge.parser.AnnotationRuleParser;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,6 @@ public class TestAnnotationRuleParser {
         assertTrue(result.stream().anyMatch(it -> it.descriptor().equals("Ljava/lang/Override2;")));
         assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.METHOD, "Lio/ib67/edge/enhance/EdgeClassEnhancer;addTransformer(Ljava/util/function/ToIntFunction;Ljava/util/function/Supplier;)Lio/ib67/edge/enhance/EdgeClassEnhancer;")));
         assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.FIELD, "Lio/ib67/edge/enhance/EdgeClassEnhancer;transformers")));
-        assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.CLASS, "io/ib67/edge/enhance/EdgeClassEnhancer")));
+        assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.CLASS, "io/ib67/edge/enhancer/EdgeClassEnhancer")));
     }
 }

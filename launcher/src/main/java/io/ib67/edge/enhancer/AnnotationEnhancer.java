@@ -15,7 +15,7 @@
  *
  */
 
-package io.ib67.edge.enhance;
+package io.ib67.edge.enhancer;
 
 import lombok.Getter;
 import org.objectweb.asm.ClassVisitor;
@@ -54,31 +54,36 @@ public class AnnotationEnhancer extends ClassVisitor {
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-        currentVisitingClass = "L"+name+";";
+        currentVisitingClass = "L" + name + ";";
         allowAll = null;
         for (EnhanceRule rule : rules) {
             if (rule.shouldEnhance(EnhanceType.CLASS, name)) {
                 visitAnnotation(rule.descriptor(), true);
                 if (verbose) {
-                    System.out.println("TYPE "+name);
+                    System.out.println("TYPE " + name);
                 }
             }
         }
         super.visit(version, access, name, signature, superName, interfaces);
     }
+
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         var method = super.visitMethod(access, name, descriptor, signature, exceptions);
         var desc = currentVisitingClass + name + descriptor;
+        boolean modified = false;
         for (EnhanceRule rule : rules) {
             if (rule.shouldEnhance(EnhanceType.METHOD, desc)) {
                 method.visitAnnotation(rule.descriptor(), true).visitEnd();
+                modified = true;
                 if (verbose) {
-                    System.out.println("METHOD "+desc);
+                    System.out.println("METHOD " + desc);
                 }
             }
         }
-        return new MyMethodWriter(super.api, method);
+        // this helps bypass a fast path in ASM, which will accidentally drop annotations on methods.
+        // Maybe that's a bug?
+        return modified ? new MyMethodWriter(api, method) : method;
     }
 
     @Override
@@ -89,7 +94,7 @@ public class AnnotationEnhancer extends ClassVisitor {
             if (rule.shouldEnhance(EnhanceType.FIELD, desc)) {
                 field.visitAnnotation(rule.descriptor(), true);
                 if (verbose) {
-                    System.out.println("FIELD "+desc);
+                    System.out.println("FIELD " + desc);
                 }
             }
         }
@@ -101,5 +106,4 @@ public class AnnotationEnhancer extends ClassVisitor {
             super(api, methodVisitor);
         }
     }
-
 }

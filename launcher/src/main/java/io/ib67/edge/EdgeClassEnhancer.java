@@ -15,7 +15,7 @@
  *
  */
 
-package io.ib67.edge.enhance;
+package io.ib67.edge;
 
 import lombok.SneakyThrows;
 import org.objectweb.asm.ClassReader;

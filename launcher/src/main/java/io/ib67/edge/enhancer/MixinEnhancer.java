@@ -15,7 +15,7 @@
  *
  */
 
-package io.ib67.edge.enhance;
+package io.ib67.edge.enhancer;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -25,15 +25,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static io.ib67.edge.EdgeTransformerAgent.VERBOSE;
-import static io.ib67.edge.EdgeTransformerAgent.VERBOSE_TOPIC_MIXIN;
-
 public class MixinEnhancer extends ClassVisitor implements Opcodes {
     protected final Map<String, Set<String>> interfaces;
+    protected boolean verbose;
 
     public MixinEnhancer(Map<String, Set<String>> mixins, int api, ClassVisitor classVisitor) {
         super(api, classVisitor);
         this.interfaces = mixins;
+    }
+
+    public MixinEnhancer setVerbose(boolean verbose) {
+        this.verbose = verbose;
+        return this;
     }
 
     public MixinEnhancer addInterfaceMixin(String interfaceName, String target) {
@@ -48,7 +51,7 @@ public class MixinEnhancer extends ClassVisitor implements Opcodes {
             if (entry.getValue().contains(name)) {
                 _interfaces = Arrays.copyOf(_interfaces, _interfaces.length + 1);
                 _interfaces[_interfaces.length - 1] = entry.getKey();
-                if(VERBOSE.contains(VERBOSE_TOPIC_MIXIN)){
+                if(verbose){
                     System.out.println("Mixin "+entry.getKey()+" applied to "+entry.getValue());
                 }
             }
