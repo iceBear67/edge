@@ -15,12 +15,24 @@
  *
  */
 
-package io.ib67.edge.api;
+package io.ib67.edge.api.future;
 
-import io.ib67.edge.api.http.EdgeRequest;
+import io.ib67.edge.mixin.Mixin;
+import io.vertx.core.Future;
+import org.graalvm.polyglot.Value;
 
-@FunctionalInterface
-@ExportToScript
-public interface RequestHandler {
-    void handleRequest(EdgeRequest objectMessage);
+/**
+ * this interface will be mixed into {@link io.vertx.core.Future}
+ */
+@Mixin(Future.class)
+public interface Thenable {
+    @SuppressWarnings("rawtypes")
+    private Future $() {
+        return (Future) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    default void then(Value onResolve, Value onReject) {
+        $().onSuccess(onResolve::executeVoid).onFailure(onReject::executeVoid);
+    }
 }

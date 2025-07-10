@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.ib67.edge.api.ExportToScript;
-import io.ib67.edge.api.Thenable;
+import io.ib67.edge.api.future.Thenable;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;

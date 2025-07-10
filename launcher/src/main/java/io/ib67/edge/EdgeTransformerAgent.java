@@ -29,11 +29,20 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Path;
 import java.security.ProtectionDomain;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class EdgeTransformerAgent implements ClassFileTransformer, Opcodes {
     public static final String ANNOTATION_RULE_PATH = System.getenv("EDGE_LAUNCHER_ANNOTATION_RULES");
     public static final String MIXIN_PATH = System.getenv("EDGE_LAUNCHER_MIXIN_PATH");
-    public static final boolean VERBOSE = System.getenv("EDGE_LAUNCHER_VERBOSE") != null;
+    public static final Set<String> VERBOSE = Optional.ofNullable(System.getenv("EDGE_LAUNCHER_VERBOSE"))
+            .stream().flatMap(it -> Stream.of(it.split(",")))
+            .collect(Collectors.toSet());
+    public static final String VERBOSE_TOPIC_LOAD = "load";
+    public static final String VERBOSE_TOPIC_ANNOTATE = "annotate";
+    public static final String VERBOSE_TOPIC_MIXIN = "mixin";
     public static final String DUMP = System.getenv("EDGE_LAUNCHER_DUMP");
     protected final EdgeClassEnhancer enhancer;
 
@@ -60,8 +69,8 @@ public class EdgeTransformerAgent implements ClassFileTransformer, Opcodes {
             } else {
                 var ruleData = in.readAllBytes();
                 var rule = new AnnotationRuleParser().parse(new String(ruleData));
-                if (VERBOSE) System.out.println("Loaded annotation "+rule.size()+" rules");
-                enhancer.addTransformer(cw -> new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE));
+                if (VERBOSE.contains(VERBOSE_TOPIC_LOAD)) System.out.println("Loaded annotation " + rule.size() + " rules");
+                enhancer.addTransformer(cw -> new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE.contains(VERBOSE_TOPIC_ANNOTATE)));
             }
         }
         try (var in = MIXIN_PATH == null

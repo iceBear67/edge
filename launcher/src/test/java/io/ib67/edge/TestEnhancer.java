@@ -17,7 +17,7 @@
 
 package io.ib67.edge;
 
-import io.ib67.edge.api.Thenable;
+import io.ib67.edge.api.future.Thenable;
 import io.ib67.edge.enhance.AnnotationEnhancer;
 import io.ib67.edge.enhance.EdgeClassEnhancer;
 import io.vertx.core.Future;

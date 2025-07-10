@@ -17,9 +17,38 @@
 
 package io.ib67.edge.api.http;
 
+import io.ib67.edge.api.MixinHelper;
 import io.ib67.edge.mixin.Mixin;
+import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 
 @Mixin(HttpServerRequest.class)
-public interface EdgeRequest {
+public interface EdgeRequest extends MixinHelper<HttpServerRequest> {
+
+    default Future<Buffer> body(){
+        return $().body();
+    }
+
+    default String absoluteURI(){
+        return $().absoluteURI();
+    }
+
+    default HttpMethod method() {
+        return $().method();
+    }
+
+    default MultiMap params(){
+        return $().params();
+    }
+
+    default MultiMap headers() {
+        return $().headers();
+    }
+
+    default EdgeResponse response() {
+        return (EdgeResponse) $().response();
+    }
 }

@@ -18,6 +18,7 @@
 package io.ib67.edge.worker;
 
 import io.ib67.edge.api.RequestHandler;
+import io.ib67.edge.api.http.EdgeRequest;
 import io.ib67.edge.script.context.ScriptContext;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.vertx.core.Promise;
@@ -56,7 +57,7 @@ public class ScriptWorker extends Worker {
     protected void handleRequest0(Message<HttpRequestBox> objectMessage) {
         var req = objectMessage.body().request();
         try {
-            handler.handleRequest(req);
+            handler.handleRequest((EdgeRequest) req);
         } catch (Exception throwable) {
             req.response().setStatusCode(500).end("Script Server Error");
             log.error("Error handling request {}/{}", req.getHeader("Host"), req.path(), throwable);

@@ -12,16 +12,7 @@ Content-Type: application/json
     "language" : "js",
     "type" : "string",
     "data" : "export function handleRequest(request) {\n    request.response().end(\"hello\");\n}\n"
-  },
-  "options" : [ {
-    "type" : "context_option",
-    "key" : "js.esm-eval-returns-exports",
-    "value" : "true"
-  }, {
-    "type" : "fs_access",
-    "prefix" : "file:///home/icybear/IdeaProjects/edge/server/",
-    "readOnly" : true
-  } ]
+  }
 }
 ###
 
