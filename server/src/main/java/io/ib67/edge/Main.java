@@ -21,9 +21,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.ib67.edge.api.ExportToScript;
+import io.ib67.edge.api.Thenable;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -58,6 +60,7 @@ public class Main {
                 .out(OutputStream.nullOutputStream()) // todo logging management
                 .options(serverConfig.engineOptions())
                 .build();
+        assert Future.succeededFuture() instanceof Thenable;
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
         log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(

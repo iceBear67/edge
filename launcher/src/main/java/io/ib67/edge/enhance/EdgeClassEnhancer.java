@@ -17,95 +17,48 @@
 
 package io.ib67.edge.enhance;
 
-import io.ib67.edge.AnnotationRuleParser;
 import lombok.SneakyThrows;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
-import java.util.function.ToIntFunction;
 
-import static org.objectweb.asm.ClassReader.SKIP_CODE;
+import static io.ib67.edge.EdgeTransformerAgent.DUMP;
 
 public class EdgeClassEnhancer implements Opcodes {
-    protected static final String ANNOTATION_RULE_PATH = System.getenv("EDGE_ANNOTATION_RULES");
-    protected static final boolean VERBOSE = System.getenv("EDGE_PRINT_ANNOTATED") != null;
-    protected static final String DUMP = System.getenv("EDGE_LAUNCHER_DUMP");
-    protected final Map<ToIntFunction<String>, Function<ClassVisitor, ClassVisitor>> transformers;
-
-    public static EdgeClassEnhancer create() {
-        var classLoader = EdgeClassEnhancer.class.getClassLoader();
-        var enhancer = new EdgeClassEnhancer();
-        try (var in = ANNOTATION_RULE_PATH == null ?
-                classLoader.getResourceAsStream("edge_annotation_rules.txt")
-                : new FileInputStream(ANNOTATION_RULE_PATH)) {
-            if (in != null) {
-                var ruleData = in.readAllBytes();
-                var rule = new AnnotationRuleParser().parse(new String(ruleData));
-                if (VERBOSE) System.out.println("Loaded annotation rule: " + rule);
-                enhancer.addTransformer(it -> SKIP_CODE, cw ->
-                        new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE));
-            } else {
-                System.err.println("Failed to load annotation rules");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        enhancer.addTransformer(name -> {
-            if ("io/vertx/core/Future".equals(name)) {
-                return SKIP_CODE;
-            }
-            return -1;
-        }, it -> new VertxEnhancer(ASM9, it));
-        return enhancer;
-    }
+    protected final List<Function<ClassVisitor, ClassVisitor>> transformers;
 
     public EdgeClassEnhancer() {
-        this.transformers = new HashMap<>();
+        this.transformers = new ArrayList<>();
     }
 
-    public EdgeClassEnhancer addTransformer(ToIntFunction<String> predicate, Function<ClassVisitor, ClassVisitor> supplier) {
-        this.transformers.put(predicate, supplier);
+    public EdgeClassEnhancer addTransformer(Function<ClassVisitor, ClassVisitor> supplier) {
+        this.transformers.add(supplier);
         return this;
     }
 
     @SneakyThrows
     public byte[] enhance(String className, byte[] bytes) {
-        ClassReader cv = null;
-        if (className == null) {
-            cv = new ClassReader(bytes);
-            className = cv.getClassName();
-        } else {
-            className = className.replace('.', '/');
+        var cv = new ClassReader(bytes);
+        var cw = new ClassWriter(cv, 0);
+        ClassVisitor visitor = cw;
+        for (Function<ClassVisitor, ClassVisitor> transformer : transformers) {
+            visitor = transformer.apply(visitor);
         }
-        ClassVisitor last = null;
-        ClassWriter cw = null;
-        for (var entry : transformers.entrySet()) {
-            var option = entry.getKey().applyAsInt(className);
-            if (option != -1) {
-                if (cv == null) cv = new ClassReader(bytes);
-                if (cw == null) {
-                    cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-                    last = cw;
-                }
-                last = entry.getValue().apply(last);
-            }
-        }
-        if (cv == null || cw == null) return bytes;
-        cv.accept(last, 0);
+        cv.accept(visitor, 0);
+        visitor.visitEnd();
+        var enhanced = cw.toByteArray();
         if (DUMP != null) {
-            var path = Paths.get(DUMP).resolve(className+".class");
+            var path = Paths.get(DUMP).resolve(className + ".class");
             Files.createDirectories(path.getParent());
-            Files.write(path, cw.toByteArray());
+            Files.write(path, enhanced);
         }
-        return cw.toByteArray();
+        return enhanced;
     }
 }

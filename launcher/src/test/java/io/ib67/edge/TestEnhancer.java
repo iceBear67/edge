@@ -26,25 +26,24 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static java.lang.invoke.MethodHandles.lookup;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.objectweb.asm.ClassReader.SKIP_CODE;
 
 public class TestEnhancer implements Opcodes {
     @SneakyThrows
     @Test
     public void testAnnotation() {
         var rule = """
-                import java/lang/Deprecated as TestAnno
-                import io/ib67/edge/EnhancerTest_$$$ as TargetClass
-                @TestAnno
+                @java/lang/Deprecated
                 TYPE io/ib67/edge/EnhancerTest_$$$
-                FIELD TargetClass.test
-                METHOD TargetClass.test()I
+                FIELD Lio/ib67/edge/EnhancerTest_$$$;test
+                METHOD Lio/ib67/edge/EnhancerTest_$$$;testM()I
                 """;
         var enhancer = new EdgeClassEnhancer()
                 .addTransformer(
-                        it -> SKIP_CODE,
                         parent -> new AnnotationEnhancer(ASM9, parent, new AnnotationRuleParser().parse(rule)).setVerbose(true)
                 );
         var cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -54,15 +53,17 @@ public class TestEnhancer implements Opcodes {
                 "io/ib67/edge/EnhancerTest_$$$",
                 null, "java/lang/Object", null
         );
-        var method = cw.visitMethod(ACC_PUBLIC, "test", "()I", null, null);
+        var method = cw.visitMethod(ACC_PUBLIC, "testM", "()I", null, null);
         method.visitInsn(ICONST_0);
         method.visitInsn(IRETURN);
+        method.visitMaxs(1,1);
         method.visitEnd();
         cw.visitField(ACC_PUBLIC + ACC_STATIC, "test", "Ljava/lang/String;", null, null);
         var clazzByte = enhancer.enhance(null, cw.toByteArray());
+        Files.write(Path.of("test.class"), clazzByte);
         var enhanced = lookup().defineClass(clazzByte);
         assertTrue(enhanced.isAnnotationPresent(Deprecated.class));
-        assertTrue(enhanced.getMethod("test").isAnnotationPresent(Deprecated.class));
+        assertTrue(enhanced.getMethod("testM").isAnnotationPresent(Deprecated.class));
         assertTrue(enhanced.getField("test").isAnnotationPresent(Deprecated.class));
     }
 

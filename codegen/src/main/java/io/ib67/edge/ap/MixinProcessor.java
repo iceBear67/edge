@@ -19,20 +19,18 @@ package io.ib67.edge.ap;
 
 import lombok.SneakyThrows;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 @SupportedAnnotationTypes("io.ib67.edge.mixin.Mixin")
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class MixinProcessor extends AbstractProcessor {
     protected MixinAnnotationVisitor annotationVisitor;
 
@@ -68,19 +66,16 @@ public class MixinProcessor extends AbstractProcessor {
             }
         }
         var filer = super.processingEnv.getFiler();
-        var resource = filer.createResource(CLASS_OUTPUT, "", "META-INF/mixins.json"); //filer.createResource(SOURCE_OUTPUT, "", "META-INF/mixins.json");
+        var resource = filer.createResource(CLASS_OUTPUT, "", "META-INF/mixins.txt");
         try (var writer = resource.openWriter()) {
-            writer.write('{');
-            var result = names.entrySet().stream()
-                    .map(entry ->
-                            "\"" + entry.getKey() + "\": [" +
-                                    entry.getValue().stream()
-                                            .map(it -> "\"" + it + "\"")
-                                            .collect(Collectors.joining(", "))
-                                    + "]")
-                    .collect(Collectors.joining(","));
-            writer.write(result);
-            writer.write('}');
+            for (var entry : names.entrySet()) {
+                var mixin = entry.getKey();
+                var targets = entry.getValue();
+                writer.write("FOR " + mixin + "\n");
+                for (TypeElement target : targets) {
+                    writer.write("\t" + target.getQualifiedName().toString() + "\n");
+                }
+            }
         }
         return true;
     }

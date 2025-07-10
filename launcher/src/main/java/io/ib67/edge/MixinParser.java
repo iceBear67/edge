@@ -1,0 +1,44 @@
+/*
+ *    Copyright 2025 iceBear67 and Contributors
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ */
+
+package io.ib67.edge;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class MixinParser {
+    public static Map<String, Set<String>> parse(String mixin) {
+        var result = new HashMap<String, Set<String>>();
+        var byLine = mixin.split("\n");
+        String currentMixin = null;
+        for (String line : byLine) {
+            if (line.startsWith("FOR ")) {
+                currentMixin = line.substring("FOR ".length()).replace('.','/');
+                continue;
+            }
+            if (line.startsWith("\t")) {
+                if (currentMixin == null) throw new IllegalStateException("Mixin is unspecified for class" + line);
+                result.computeIfAbsent(currentMixin, k -> new HashSet<>())
+                        .add(line.trim().replace('.','/'));
+            }
+        }
+        return result;
+    }
+
+}
