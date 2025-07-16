@@ -28,7 +28,6 @@ import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.FileSystem;
 import org.graalvm.polyglot.io.IOAccess;
 
-import javax.annotation.Nonnull;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -332,20 +331,17 @@ public class IsolatedRuntime extends ScriptRuntime {
 
         @Override
         @HostAccess.Export
-        @Nonnull
         public Set<String> keySet() {
             return getScriptContext().getModuleExports().keySet();
         }
 
         @Override
-        @Nonnull
         @HostAccess.Export
         public Collection<Object> values() {
             return (Collection<Object>) (Object) getScriptContext().getModuleExports().values();
         }
 
         @Override
-        @Nonnull
         public Set<Entry<String, Object>> entrySet() {
             return (Set<Entry<String, Object>>) (Object) getScriptContext().getModuleExports().entrySet();
         }

@@ -17,7 +17,6 @@
 
 package io.ib67.edge;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
@@ -36,7 +35,6 @@ import java.util.Map;
 @Log4j2
 public class ServerVerticle extends AbstractVerticle {
     protected final Map<String, Worker> workers = new HashMap<>();
-    protected final ObjectMapper mapper = new ObjectMapper();
     @Getter
     protected final String host;
     @Getter

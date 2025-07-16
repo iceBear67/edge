@@ -69,7 +69,7 @@ public class EdgeTransformerAgent implements ClassFileTransformer, Opcodes {
             var ruleData = in.readAllBytes();
             var rule = AnnotationRuleParser.parse(new String(ruleData));
             if (VERBOSE.contains(VERBOSE_TOPIC_LOAD))
-                System.out.println("Loaded annotation " + rule.size() + " rules");
+                System.out.println("Loaded " + rule.size() + " annotation rules");
             enhancer.addTransformer(cw -> new AnnotationEnhancer(ASM9, cw, rule).setVerbose(VERBOSE.contains(VERBOSE_TOPIC_ANNOTATE)));
         }
         try (var in = readFileOrResource(MIXIN_PATH, "META-INF/mixins.txt")) {
