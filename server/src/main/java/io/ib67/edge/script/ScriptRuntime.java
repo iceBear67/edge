@@ -18,6 +18,7 @@
 package io.ib67.edge.script;
 
 import io.ib67.edge.script.context.ScriptContext;
+import io.ib67.edge.script.exception.ContextInitException;
 import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.IOAccess;
 
@@ -42,17 +43,17 @@ public class ScriptRuntime {
         return HostAccess.NONE;
     }
 
-    public ScriptContext create(Source source, UnaryOperator<Context.Builder> operator){
-        return create(source, operator, it->{});
+    public ScriptContext create(Source source) throws ContextInitException {
+        return create(source, it -> {
+        });
     }
 
     public ScriptContext create(
             Source source,
-            UnaryOperator<Context.Builder> operator, //todo consider removal
             Consumer<Value> bindingOperator
     ) {
         var _context = Context.newBuilder().engine(engine);
-        _context = configureContext().apply(operator.apply(_context)).allowHostAccess(getHostAccess());
+        _context = configureContext().apply(_context).allowHostAccess(getHostAccess());
         var gContext = _context.build();
         return new ScriptContext(gContext, source) {
             @Override

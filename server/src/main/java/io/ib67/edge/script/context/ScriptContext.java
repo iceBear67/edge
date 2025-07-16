@@ -17,6 +17,7 @@
 
 package io.ib67.edge.script.context;
 
+import io.ib67.edge.script.exception.ContextInitException;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.graalvm.polyglot.Context;
@@ -30,29 +31,39 @@ import java.util.*;
 @Log4j2
 public class ScriptContext implements AutoCloseable {
     @Getter
+    private volatile boolean initialized = false;
+    @Getter
     protected final Context scriptContext;
     protected final Map<String, Value> exportedMembers = new HashMap<>();
     protected final Map<String, List<Runnable>> lifecycleHandlers;
     protected final Source source;
+    private final Value parsedSource;
 
-    //todo extensible module export discovery?
     protected ScriptContext(Context scriptContext, Source entrypoint) {
         this.scriptContext = scriptContext;
         this.source = entrypoint;
         this.lifecycleHandlers = new HashMap<>();
+        this.parsedSource = scriptContext.parse(entrypoint);
+    }
+
+    public void init() throws ContextInitException {
+        if (initialized) throw new IllegalStateException("Script context already initialized");
         try {
-            initializeBindings(scriptContext.getBindings(entrypoint.getLanguage()));
-            var exports = scriptContext.eval(this.source);
-            if (exports != null) {
-                for (String memberKey : exports.getMemberKeys()) {
-                    exportedMembers.put(memberKey, exports.getMember(memberKey));
-                }
-            }
-        } catch (RuntimeException e) { //todo maybe a checked exception
-            System.err.println(e.getClass().getCanonicalName());
-            e.printStackTrace();
+            initializeBindings(scriptContext.getBindings(source.getLanguage()));
+            populateExportedModules(parsedSource);
+        } catch (RuntimeException e) {
             scriptContext.close(true);
-            throw e;
+            throw new ContextInitException(e);
+        }
+        initialized = true;
+    }
+
+    protected void populateExportedModules(Value parsedSource) {
+        var exports = parsedSource.execute();
+        if (exports != null) {
+            for (String memberKey : exports.getMemberKeys()) {
+                exportedMembers.put(memberKey, exports.getMember(memberKey));
+            }
         }
     }
 

@@ -27,11 +27,11 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 
 @Log4j2
 public class ServerVerticle extends AbstractVerticle {
@@ -56,17 +56,23 @@ public class ServerVerticle extends AbstractVerticle {
                 .requestHandler(this::onRequest)
                 .listen(port, host)
                 .onComplete(it -> {
-                    log.info("Server verticle {} is listening on {}:{}", this.deploymentID(), host, port);
+                    log.info("Server verticle {} is listening on {}:{} ", this.deploymentID(), host, port);
                     startPromise.complete();
                 });
     }
 
+    @SneakyThrows
     public void deploy(Deployment deployment) {
-        var scriptContext = runtime.create(deployment.source(), UnaryOperator.identity());
-        var worker = new ScriptWorker(scriptContext, () ->
-                log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));
-        workers.put(deployment.name().toLowerCase(), worker);
-        vertx.deployVerticle(worker);
+        vertx.executeBlocking(() -> {
+            var scriptContext = runtime.create(deployment.source());
+            return new ScriptWorker(scriptContext, () ->
+                    log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));
+        }).onSuccess(it -> {
+            workers.put(deployment.name().toLowerCase(), it);
+            vertx.deployVerticle(it);
+        }).onFailure(err -> {
+            log.error("Cannot deploy worker for deployment {}", deployment.toHumanReadable(), err);
+        });
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {

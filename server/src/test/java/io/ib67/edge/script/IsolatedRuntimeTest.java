@@ -90,7 +90,7 @@ class IsolatedRuntimeTest {
 
         // ... and the "privileged code" should NOT work in isolated runtime
         {
-            var context = runtime.create(Source.create("js", ""), it -> it, it -> {
+            var context = runtime.create(Source.create("js", ""),it -> {
             });
             context.getScriptContext().getBindings("js").putMember("outputPath", libPath);
             assertThrows(PolyglotException.class, () -> context.eval(Source.create("js", privilegedCode)));
@@ -102,7 +102,7 @@ class IsolatedRuntimeTest {
                 import { writePrivileged } from "@the_lib/index.mjs";
                 export function test(){writePrivileged(outputPath)}
                 """, "test.mjs").build();
-        var context = runtime.create(callLibrarySource, it -> it, it -> it.putMember("outputPath", outputPath));
+        var context = runtime.create(callLibrarySource, it -> it.putMember("outputPath", outputPath));
         context.getExportedMembers().get("test").executeVoid();
         context.close();
         assertTrue(Files.exists(outputPath));
