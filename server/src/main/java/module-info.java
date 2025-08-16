@@ -9,9 +9,9 @@ module edge.server {
     requires com.fasterxml.jackson.core;
     requires static lombok;
     requires org.graalvm.polyglot;
-    exports io.ib67.edge.api;
-    exports io.ib67.edge.api.future;
-    exports io.ib67.edge.api.http;
+    requires kiwi.lang;
+    exports io.ib67.edge.api.script.future;
+    exports io.ib67.edge.api.script.http;
     exports io.ib67.edge;
     exports io.ib67.edge.config;
     exports io.ib67.edge.worker;
@@ -22,4 +22,5 @@ module edge.server {
     exports io.ib67.edge.script.exception;
     exports io.ib67.edge.script.io;
     exports io.ib67.edge.script.locator;
+    exports io.ib67.edge.api.script;
 }

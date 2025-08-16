@@ -25,12 +25,8 @@ import org.graalvm.polyglot.Source;
 
 public record Deployment(
         String name,
-        String version,
         @JsonSerialize(using = SourceSerializer.class)
         @JsonDeserialize(using = SourceDeserializer.class)
         Source source
 ) {
-    public String toHumanReadable() {
-        return name + " v" + version;
-    }
 }

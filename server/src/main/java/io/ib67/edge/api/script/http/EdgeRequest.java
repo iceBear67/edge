@@ -15,9 +15,9 @@
  *
  */
 
-package io.ib67.edge.api.http;
+package io.ib67.edge.api.script.http;
 
-import io.ib67.edge.api.MixinHelper;
+import io.ib67.edge.api.script.MixinHelper;
 import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;

@@ -15,12 +15,12 @@
  *
  */
 
-package io.ib67.edge.api;
+package io.ib67.edge.api.script;
 
-import io.ib67.edge.api.http.EdgeRequest;
+import java.lang.annotation.*;
 
-@FunctionalInterface
-@ExportToScript
-public interface RequestHandler {
-    void handleRequest(EdgeRequest objectMessage);
+@Target({ElementType.TYPE,ElementType.FIELD,ElementType.METHOD,ElementType.CONSTRUCTOR})
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ExportToScript {
 }

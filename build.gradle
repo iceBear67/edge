@@ -36,6 +36,10 @@ def configureModules(Project project) {
         repositories {
             mavenLocal() // for testing
             mavenCentral()
+            maven {
+                name "kalculosSnapshots"
+                url "https://repo.sfclub.cc/snapshots"
+            }
         }
         configureJava(project)
     }

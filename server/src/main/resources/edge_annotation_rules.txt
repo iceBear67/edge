@@ -1,4 +1,4 @@
-@io.ib67.edge.api.ExportToScript
+@io.ib67.edge.api.script.ExportToScript
 STARTS_WITH Lio/vertx/core/http/HttpServerRequest;
 STARTS_WITH Lio/vertx/core/http/HttpServerResponse;
 STARTS_WITH Lio/vertx/core/MultiMap;

@@ -66,7 +66,6 @@ public class ControlServerVerticle extends AbstractVerticle {
         routingContext.request().bodyHandler(buffer -> {
             try {
                 var deployment = mapper.readValue(buffer.getBytes(), Deployment.class);
-                log.info("Deploying {}", deployment.toHumanReadable());
                 serverVerticle.deploy(deployment);
                 routingContext.response().end();
             } catch (Exception e) {

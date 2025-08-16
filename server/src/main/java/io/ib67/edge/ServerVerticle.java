@@ -21,7 +21,7 @@ import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.ib67.edge.worker.ScriptWorker;
-import io.ib67.edge.worker.Worker;
+import io.ib67.kiwi.routine.Result;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
@@ -29,12 +29,9 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Log4j2
 public class ServerVerticle extends AbstractVerticle {
-    protected final Map<String, Worker> workers = new HashMap<>();
+    protected final WorkerRouter workerRouter = new WorkerRouter(vertx);
     @Getter
     protected final String host;
     @Getter
@@ -59,18 +56,15 @@ public class ServerVerticle extends AbstractVerticle {
                 });
     }
 
+
     @SneakyThrows
     public void deploy(Deployment deployment) {
-        vertx.executeBlocking(() -> {
-            var scriptContext = runtime.create(deployment.source());
-            return new ScriptWorker(scriptContext, () ->
-                    log.info("ScriptWorker {} is shutting down...", deployment.toHumanReadable()));
-        }).onSuccess(it -> {
-            workers.put(deployment.name().toLowerCase(), it);
-            vertx.deployVerticle(it);
-        }).onFailure(err -> {
-            log.error("Cannot deploy worker for deployment {}", deployment.toHumanReadable(), err);
-        });
+        workerRouter.registerWorker(
+                deployment.name(),
+                () -> Result.fromAny(() -> runtime.create(deployment.source()))
+                        .map(scriptContext -> new ScriptWorker(scriptContext, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
+                        .orElseThrow()
+        ).onFailure(err -> log.error("Cannot deploy worker for deployment {}", deployment.name(), err));
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {
@@ -86,7 +80,7 @@ public class ServerVerticle extends AbstractVerticle {
             return;
         }
         var prefix = host.substring(0, firstDot);
-        var worker = workers.get(prefix.toLowerCase());
+        var worker = workerRouter.getWorker(prefix);
         if (worker != null) {
             worker.handleRequest(getVertx(), httpServerRequest);
         } else {

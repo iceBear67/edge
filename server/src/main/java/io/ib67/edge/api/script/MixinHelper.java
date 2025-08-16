@@ -15,7 +15,7 @@
  *
  */
 
-package io.ib67.edge.api;
+package io.ib67.edge.api.script;
 
 public interface MixinHelper<T> {
     default T $(){
