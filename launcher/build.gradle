@@ -42,6 +42,10 @@ application {
     applicationDefaultJvmArgs = ["-javaagent:../agent/${jar.archiveFileName.get()}"]
 }
 
+run {
+    standardInput = System.in
+}
+
 dependencies {
     api libs.asm
     runtimeOnly project(":server")

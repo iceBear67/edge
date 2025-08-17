@@ -23,6 +23,7 @@ import io.ib67.edge.script.context.ScriptContext;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
@@ -31,6 +32,7 @@ import lombok.extern.log4j.Log4j2;
  */
 @Log4j2
 public class ScriptWorker extends Worker {
+    @Getter
     protected final ScriptContext context;
     protected RequestHandler handler;
 

@@ -36,6 +36,7 @@ public class ScriptContext implements AutoCloseable {
     protected final Context scriptContext;
     protected final Map<String, Value> exportedMembers = new HashMap<>();
     protected final Map<String, List<Runnable>> lifecycleHandlers;
+    @Getter
     protected final Source source;
     private final Value parsedSource;
 

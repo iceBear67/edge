@@ -19,6 +19,7 @@ jimfs = { module = "com.google.jimfs:jimfs", version.ref = "jimfs" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 pf4j = { module = "org.pf4j:pf4j", version.ref = "pf4j" }
 kiwi-lang = { module = "io.ib67.kiwi:lang", version.ref = "kiwi"}
+kiwi-events = { module = "io.ib67.kiwi:event", version.ref = "kiwi"}
 
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }

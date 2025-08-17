@@ -10,6 +10,8 @@ module edge.server {
     requires static lombok;
     requires org.graalvm.polyglot;
     requires kiwi.lang;
+    requires kiwi.event;
+    requires org.pf4j;
     exports io.ib67.edge.api.script.future;
     exports io.ib67.edge.api.script.http;
     exports io.ib67.edge;

@@ -25,6 +25,7 @@ dependencies {
     api libs.graal.polyglot
     api libs.graal.js
     api libs.kiwi.lang
+    api libs.kiwi.events
 
     api libs.bundles.log4j
     implementation platform("com.fasterxml.jackson:jackson-bom:${libs.versions.jackson}")

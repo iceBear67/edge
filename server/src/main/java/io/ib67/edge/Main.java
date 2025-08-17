@@ -20,28 +20,46 @@ package io.ib67.edge;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.ib67.edge.api.event.DeploymentUploadedEvent;
+import io.ib67.edge.api.EdgePlugin;
+import io.ib67.edge.api.event.LifecycleEvents;
+import io.ib67.edge.api.event.init.EdgeServerInitializedEvent;
+import io.ib67.edge.api.event.init.RuntimeInitializedEvent;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.future.Thenable;
+import io.ib67.edge.command.CommandLoop;
+import io.ib67.edge.command.StopCommand;
 import io.ib67.edge.config.ServerConfig;
+import io.ib67.edge.plugin.PersistDeploymentPlugin;
 import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
-import io.ib67.edge.serializer.AnyMessageCodec;
+import io.ib67.kiwi.event.HierarchyEventBus;
+import io.ib67.kiwi.event.api.EventBus;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.graalvm.polyglot.Engine;
+import org.pf4j.DefaultPluginManager;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 
 @Log4j2
 public class Main {
     private static final String CONFIG_PATH = System.getProperty("edge.config", "config.json");
+    private static final Map<String, Supplier<PersistDeploymentPlugin>> BUILT_IN_PLUGINS;
+
+    static {
+        BUILT_IN_PLUGINS = Map.of(
+                "persist deployments", PersistDeploymentPlugin::new
+        );
+    }
 
     @SneakyThrows
     public static void main(String[] args) {
@@ -57,15 +75,14 @@ public class Main {
         }
         var serverConfig = om.readValue(configFile, ServerConfig.class);
         var vertx = Vertx.vertx();
-        var bus = vertx.eventBus();
-        bus.registerDefaultCodec(DeploymentUploadedEvent.class, new AnyMessageCodec<>(DeploymentUploadedEvent.class));
-
+        var bus = new HierarchyEventBus();
+        loadPlugins(serverConfig, bus);
         var engine = Engine.newBuilder()
                 .in(InputStream.nullInputStream())
                 .out(OutputStream.nullOutputStream()) // todo logging management
                 .options(serverConfig.engineOptions())
                 .build();
-        assert Future.succeededFuture() instanceof Thenable;
+        assert Future.succeededFuture() instanceof Thenable : "Mixin is not working yet";
         Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
         log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(
@@ -78,13 +95,15 @@ public class Main {
         );
         runtime.setHostContextOptions(serverConfig.runtime().hostContextOptions());
         runtime.setGuestContextOptions(serverConfig.runtime().guestContextOptions());
+        bus.post(new RuntimeInitializedEvent(runtime));
         log.info("Deploying server verticle...");
-        var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime);
+        var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime, bus);
         vertx.deployVerticle(serverVerticle);
         if (serverConfig.controlListenPort() < 0) {
             log.info("Control server has been disabled.");
             return;
         }
+        bus.post(new EdgeServerInitializedEvent(serverVerticle));
         log.info("Deploying control server...");
         var controlServerVerticle = new ControlServerVerticle(
                 serverConfig.controlListenHost(),
@@ -92,5 +111,38 @@ public class Main {
                 serverVerticle
         );
         vertx.deployVerticle(controlServerVerticle);
+        bus.post(LifecycleEvents.SERVER_START);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutting down server...");
+            bus.post(LifecycleEvents.SERVER_STOP);
+        }));
+        initREPL();
+    }
+
+    private static void initREPL() {
+        var commandLoop = new CommandLoop(
+                new StopCommand()
+        );
+        commandLoop.run(System.in);
+    }
+
+    private static void loadPlugins(ServerConfig config, EventBus bus) {
+        var pm = new DefaultPluginManager();
+        pm.loadPlugins();
+        pm.startPlugins();
+        var builtIn = config.builtInPlugins();
+        if(builtIn == null) builtIn = List.of();
+        for (String builtInPlugin : builtIn) {
+            var pluginSupplier = BUILT_IN_PLUGINS.get(builtInPlugin);
+            if (pluginSupplier == null) {
+                log.error("No built-in plugin named `{}` were found.", builtInPlugin);
+                continue;
+            }
+            pluginSupplier.get().registerListener(bus);
+        }
+        var extensions = pm.getExtensions(EdgePlugin.class);
+        for (EdgePlugin extension : extensions) {
+            extension.registerListener(bus);
+        }
     }
 }

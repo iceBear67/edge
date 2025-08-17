@@ -17,36 +17,45 @@
 
 package io.ib67.edge;
 
+import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.ib67.edge.worker.ScriptWorker;
+import io.ib67.edge.worker.Worker;
+import io.ib67.kiwi.event.api.EventBus;
 import io.ib67.kiwi.routine.Result;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Map;
+
 @Log4j2
-public class ServerVerticle extends AbstractVerticle {
-    protected final WorkerRouter workerRouter = new WorkerRouter(vertx);
+public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     @Getter
     protected final String host;
     @Getter
     protected final int port;
     protected final ScriptRuntime runtime;
+    protected final EventBus eventBus;
+    protected WorkerRouter workerRouter;
 
-    public ServerVerticle(String host, int port, ScriptRuntime runtime) {
+    public ServerVerticle(String host, int port, ScriptRuntime runtime, EventBus eventBus) {
         this.host = host;
         this.runtime = runtime;
         this.port = port;
+        this.eventBus = eventBus;
     }
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
         getVertx().eventBus().registerDefaultCodec(HttpRequestBox.class, new AnyMessageCodec<>(HttpRequestBox.class));
+        workerRouter = new WorkerRouter(getVertx());
         getVertx().createHttpServer()
                 .requestHandler(this::onRequest)
                 .listen(port, host)
@@ -58,8 +67,8 @@ public class ServerVerticle extends AbstractVerticle {
 
 
     @SneakyThrows
-    public void deploy(Deployment deployment) {
-        workerRouter.registerWorker(
+    public Future<String> deploy(Deployment deployment) {
+        return workerRouter.registerWorker(
                 deployment.name(),
                 () -> Result.fromAny(() -> runtime.create(deployment.source()))
                         .map(scriptContext -> new ScriptWorker(scriptContext, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
@@ -88,5 +97,15 @@ public class ServerVerticle extends AbstractVerticle {
             httpServerRequest.response().end();
         }
 
+    }
+
+    @Override
+    public Map<String, Worker> getWorkers() {
+        return workerRouter.getWorkers();
+    }
+
+    @Override
+    public ScriptRuntime getRuntime() {
+        return null;
     }
 }

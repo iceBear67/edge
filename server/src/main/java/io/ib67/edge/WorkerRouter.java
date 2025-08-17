@@ -24,12 +24,11 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -91,12 +90,15 @@ public class WorkerRouter {
                 .map(Worker::deploymentID);
     }
 
-    public Collection<Worker> getWorkers() {
-        return new ArrayList<>(nameToWorkers.values())
+    public Map<String, Worker> getWorkers() {
+        return nameToWorkers.entrySet()
                 .stream()
-                .filter(it -> it.status == WorkerInfo.Status.NORMAL)
-                .map(it -> it.worker)
-                .toList();
+                .<Map.Entry<String, Worker>>
+                        mapMulti((entry, sink) -> {
+                    var value = entry.getValue();
+                    if (value.status != WorkerInfo.Status.NORMAL) return;
+                    sink.accept(Map.entry(entry.getKey(), entry.getValue().worker));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @AllArgsConstructor
