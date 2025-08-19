@@ -41,7 +41,9 @@ public class ESModuleFS extends DelegatedFileSystem {
         return super.parsePath(uri);
     }
 
-    //todo check ESM specification
+    // inputs:
+    // @XXX/xxxx
+    // xxxx
     @Override
     public Path parsePath(String path) {
         // we assume that this parsePath method will run on the same thread the script run.
@@ -55,7 +57,6 @@ public class ESModuleFS extends DelegatedFileSystem {
 
             var firstSlash = path.indexOf('/');
             if (firstSlash == -1) {
-                //todo import {} from "@vertx" 的情况下从哪里搜索 import？
                 var root = locator.locateRoot(path);
                 if (root == null) {
                     throw new IllegalArgumentException("cannot find root for module "+path);

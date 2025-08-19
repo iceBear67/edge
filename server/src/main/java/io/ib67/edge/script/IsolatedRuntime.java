@@ -17,6 +17,7 @@
 
 package io.ib67.edge.script;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.jimfs.Jimfs;
 import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
@@ -66,7 +67,7 @@ public class IsolatedRuntime extends ScriptRuntime {
     protected Map<String, String> guestContextOptions = new HashMap<>();
 
     public IsolatedRuntime(ModuleLocator moduleLocator) {
-        this(Engine.create(),  moduleLocator, HostAccess.NONE);
+        this(Engine.create(), moduleLocator, HostAccess.NONE);
     }
 
     public static HostAccess.Builder hostContainerAccess() {
@@ -213,6 +214,7 @@ public class IsolatedRuntime extends ScriptRuntime {
     }
 
     protected static class LibraryStubCache {
+        private static final ObjectMapper SHARED_MAPPER = new ObjectMapper();
         protected final ModuleLocator locator;
         @Getter
         protected final Map<String, Library> librarySources = new HashMap<>();
@@ -247,6 +249,19 @@ public class IsolatedRuntime extends ScriptRuntime {
 
         @SneakyThrows
         private List<Source> discoverSources(Path libRoot) {
+            //todo multilingual
+            var jsManifest = libRoot.resolve("package.json");
+            if (Files.exists(jsManifest)) {
+                var jsonStr = Files.readAllBytes(jsManifest);
+                var tree = SHARED_MAPPER.readTree(jsonStr);
+                var main = tree.get("main").asText();
+                if (main != null) {
+                    var file = libRoot.resolve(main);
+                    if (Files.exists(file)) {
+                        return List.of(makeSourceOf(file));
+                    }
+                }
+            }
             try (var stream = Files.walk(libRoot, 32, FileVisitOption.FOLLOW_LINKS)) {
                 return stream.filter(Files::isRegularFile)
                         .filter(it -> it.getFileName().toString().endsWith(".mjs"))
