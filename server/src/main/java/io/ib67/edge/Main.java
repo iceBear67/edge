@@ -63,6 +63,7 @@ public class Main {
 
     @SneakyThrows
     public static void main(String[] args) {
+        var begin = System.currentTimeMillis();
         log.info("Initializing edge server...");
         var om = JsonMapper.builder()
                 .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
@@ -116,6 +117,7 @@ public class Main {
             log.info("Shutting down server...");
             bus.post(LifecycleEvents.SERVER_STOP);
         }));
+        log.info("Server started! ({}s)", (System.currentTimeMillis() - begin)/1000);
         initREPL();
     }
 

@@ -28,6 +28,7 @@ dependencies {
     api libs.kiwi.events
 
     api libs.bundles.log4j
+    api libs.log4j.slf4j.impl
     implementation platform("com.fasterxml.jackson:jackson-bom:${libs.versions.jackson}")
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

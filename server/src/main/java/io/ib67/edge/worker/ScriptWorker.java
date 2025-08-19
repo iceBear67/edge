@@ -56,6 +56,7 @@ public class ScriptWorker extends Worker {
     public void stop(Promise<Void> stopPromise) throws Exception {
         super.stop(stopPromise);
         context.onLifecycleEvent("stop");
+        context.close();
     }
 
     @Override
