@@ -8,7 +8,7 @@ Discussion: [Telegram](https://t.me/kalculos_hub)
 ## Features
  - **High performance**: Heavy lifting is done to Vert.x and Netty, which provide solid foundations for I/O-bound applications.  
  - **Language-level integration**: For example, you can call `await` on _Vert.x Futures_ directly in JavaScript, without the need of wrappers.
- - **Automatic resource nanagement**: Edge manages things like database connection initializations and pools to help you achieve zero configuration, without sacrificing your freedom to do by yourself.
+ - **Automatic resource management**: Edge manages things like database connection initializations and pools to help you achieve zero configuration, without sacrificing your freedom to do by yourself.
  - **Isolated runtime**: Although it isn't a sandbox, edge isolates application codes and library codes and grant them with different privileges.
  - **Plugin support**: You can extend Edge's capability easily, check the built-in plugins.
  - **Easy interop**: We use GraalVM for our script execution engine, which makes your scripts run much faster and gives them access to Java's vast ecosystem.  
