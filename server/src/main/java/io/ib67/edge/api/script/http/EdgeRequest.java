@@ -17,6 +17,7 @@
 
 package io.ib67.edge.api.script.http;
 
+import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.MixinHelper;
 import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
@@ -27,27 +28,32 @@ import io.vertx.core.http.HttpServerRequest;
 
 @Mixin(HttpServerRequest.class)
 public interface EdgeRequest extends MixinHelper<HttpServerRequest> {
-
+    @ExportToScript
     default Future<Buffer> body(){
         return $().body();
     }
 
+    @ExportToScript
     default String absoluteURI(){
         return $().absoluteURI();
     }
 
+    @ExportToScript
     default HttpMethod method() {
         return $().method();
     }
 
+    @ExportToScript
     default MultiMap params(){
         return $().params();
     }
 
+    @ExportToScript
     default MultiMap headers() {
         return $().headers();
     }
 
+    @ExportToScript
     default EdgeResponse response() {
         return (EdgeResponse) $().response();
     }

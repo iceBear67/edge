@@ -1,6 +1,4 @@
 @io.ib67.edge.api.script.ExportToScript
-STARTS_WITH Lio/vertx/core/http/HttpServerRequest;
-STARTS_WITH Lio/vertx/core/http/HttpServerResponse;
 STARTS_WITH Lio/vertx/core/MultiMap;
 STARTS_WITH Lio/vertx/core/streams/WriteStream;
 STARTS_WITH Lio/vertx/core/streams/ReadStream;
@@ -8,7 +6,3 @@ STARTS_WITH Lio/vertx/core/Future;
 STARTS_WITH Lio/vertx/core/Promise;
 STARTS_WITH Lio/vertx/core/AsyncResult;
 STARTS_WITH Lio/vertx/core/buffer/Buffer;
-
-STARTS_WITH Lio/vertx/core/http/impl/Http1xServerRequest;
-STARTS_WITH Lio/vertx/core/http/impl/Http1xServerResponse;
-

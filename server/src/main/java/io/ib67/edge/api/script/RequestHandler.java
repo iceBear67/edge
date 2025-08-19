@@ -22,5 +22,6 @@ import io.ib67.edge.api.script.http.EdgeRequest;
 @FunctionalInterface
 @ExportToScript
 public interface RequestHandler {
+    @ExportToScript
     void handleRequest(EdgeRequest objectMessage);
 }

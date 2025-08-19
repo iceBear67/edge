@@ -17,6 +17,7 @@
 
 package io.ib67.edge.api.script.http;
 
+import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.MixinHelper;
 import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
@@ -25,47 +26,57 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerResponse;
 
 @Mixin(HttpServerResponse.class)
+@ExportToScript
 public interface EdgeResponse extends MixinHelper<HttpServerResponse> {
     default EdgeResponse setStatusCode(int statusCode) {
         $().setStatusCode(statusCode);
         return this;
     }
 
+    @ExportToScript
     default Future<Void> write(String chunk) {
         return $().write(chunk);
     }
 
+    @ExportToScript
     default Future<Void> write(Buffer buffer) {
         return $().write(buffer);
     }
 
+    @ExportToScript
     default Future<Void> send(Buffer buffer) {
         return $().send(buffer);
     }
 
+    @ExportToScript
     default Future<Void> send(String chunk) {
         return $().send(chunk);
     }
 
+    @ExportToScript
     default EdgeResponse end(String chunk) {
         $().end(chunk);
         return this;
     }
 
+    @ExportToScript
     default EdgeResponse end() {
         $().end();
         return this;
     }
 
+    @ExportToScript
     default Future<Void> end(Buffer buffer) {
         return $().end(buffer);
     }
 
+    @ExportToScript
     default EdgeResponse putHeader(String name, String value) {
         $().putHeader(name, value);
         return this;
     }
 
+    @ExportToScript
     default MultiMap headers() {
         return $().headers();
     }

@@ -18,6 +18,7 @@
 package io.ib67.edge;
 
 import io.ib67.edge.api.EdgeServer;
+import io.ib67.edge.resource.ResourceManager;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
@@ -32,6 +33,7 @@ import io.vertx.core.http.HttpServerRequest;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.graalvm.polyglot.Value;
 
 import java.util.Map;
 
@@ -43,6 +45,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     protected final int port;
     protected final ScriptRuntime runtime;
     protected final EventBus eventBus;
+    protected final ResourceManager resourceManager;
     protected WorkerRouter workerRouter;
 
     public ServerVerticle(String host, int port, ScriptRuntime runtime, EventBus eventBus) {
@@ -50,6 +53,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         this.runtime = runtime;
         this.port = port;
         this.eventBus = eventBus;
+        this.resourceManager = new ResourceManager();
     }
 
     @Override
@@ -70,10 +74,14 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     public Future<String> deploy(Deployment deployment) {
         return workerRouter.registerWorker(
                 deployment.name(),
-                () -> Result.fromAny(() -> runtime.create(deployment.source()))
+                () -> Result.fromAny(() -> runtime.create(deployment.source(), this::injectDependencies))
                         .map(scriptContext -> new ScriptWorker(scriptContext, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
                         .orElseThrow()
         ).onFailure(err -> log.error("Cannot deploy worker for deployment {}", deployment.name(), err));
+    }
+
+    private void injectDependencies(Value value) {
+        value.putMember("managedRes", resourceManager);
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {

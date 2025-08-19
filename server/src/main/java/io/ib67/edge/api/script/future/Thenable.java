@@ -17,6 +17,7 @@
 
 package io.ib67.edge.api.script.future;
 
+import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
 import org.graalvm.polyglot.Value;
@@ -32,6 +33,7 @@ public interface Thenable {
     }
 
     @SuppressWarnings("unchecked")
+    @ExportToScript
     default void then(Value onResolve, Value onReject) {
         $().onSuccess(onResolve::executeVoid).onFailure(onReject::executeVoid);
     }

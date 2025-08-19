@@ -17,6 +17,7 @@ module edge.server {
     exports io.ib67.edge;
     exports io.ib67.edge.config;
     exports io.ib67.edge.worker;
+    exports io.ib67.edge.resource;
 
     // script runtimes
     exports io.ib67.edge.script;
