@@ -19,7 +19,6 @@ package io.ib67.edge.worker;
 
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -49,7 +48,7 @@ public class Worker extends AbstractVerticle {
     }
 
     @Override
-    public void stop(Promise<Void> stopPromise) throws Exception {
+    public void stop(){
         try {
             onClose.run();
         } catch (Throwable e) {

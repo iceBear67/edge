@@ -72,7 +72,6 @@ public class WorkerRouter {
         }
         var wi = new WorkerInfo(null, WorkerInfo.Status.DEPLOYING);
         nameToWorkers.put(name, wi);
-        log.info("Deploying worker {}", name);
         return deployWorker(name, worker).apply(null)
                 .onFailure(f -> {
                     log.error("Error occurred when deploying worker {}", name, f);
@@ -81,13 +80,16 @@ public class WorkerRouter {
     }
 
     protected <A> Function<A, Future<String>> deployWorker(String name, Supplier<Worker> worker) {
-        return z -> vertx.executeBlocking(worker::get)
-                .flatMap(t -> vertx.deployVerticle(t).map(t))
-                .onSuccess(v -> {
-                    nameToWorkers.put(name, new WorkerInfo(v, WorkerInfo.Status.NORMAL));
-                    log.info("Deployed worker {}", name);
-                })
-                .map(Worker::deploymentID);
+        return z -> {
+            log.info("Deploying worker {}", name);
+            return vertx.executeBlocking(worker::get)
+                    .flatMap(t -> vertx.deployVerticle(t).map(t))
+                    .onSuccess(v -> {
+                        nameToWorkers.put(name, new WorkerInfo(v, WorkerInfo.Status.NORMAL));
+                        log.info("Deployed worker {}", name);
+                    })
+                    .map(Worker::deploymentID);
+        };
     }
 
     public Map<String, Worker> getWorkers() {

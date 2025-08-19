@@ -84,11 +84,12 @@ public class Main {
                 .options(serverConfig.engineOptions())
                 .build();
         assert Future.succeededFuture() instanceof Thenable : "Mixin is not working yet";
-        Files.createDirectories(Path.of(serverConfig.runtime().pathLibraries()));
+        var pathLibraries = Path.of(serverConfig.runtime().pathLibraries());
+        Files.createDirectories(pathLibraries);
         log.info("Initializing runtime...");
         var runtime = new IsolatedRuntime(
                 engine,
-                new DirectoryModuleLocator(Path.of(serverConfig.runtime().pathLibraries())),
+                new DirectoryModuleLocator(pathLibraries),
                 IsolatedRuntime.hostContainerAccess()
                         .allowImplementationsAnnotatedBy(ExportToScript.class)
                         .allowAccessAnnotatedBy(ExportToScript.class)

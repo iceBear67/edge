@@ -45,6 +45,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     protected final int port;
     protected final ScriptRuntime runtime;
     protected final EventBus eventBus;
+    @Getter
     protected final ResourceManager resourceManager;
     protected WorkerRouter workerRouter;
 

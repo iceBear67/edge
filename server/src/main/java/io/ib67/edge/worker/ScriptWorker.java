@@ -21,7 +21,6 @@ import io.ib67.edge.api.script.RequestHandler;
 import io.ib67.edge.api.script.http.EdgeRequest;
 import io.ib67.edge.script.context.ScriptContext;
 import io.ib67.edge.serializer.HttpRequestBox;
-import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -45,16 +44,17 @@ public class ScriptWorker extends Worker {
     @Override
     public void start() {
         super.start();
-        if(!context.isInitialized()) context.init();
+        if (!context.isInitialized()) context.init();
         var binding = context.getScriptContext().getBindings("js");
         binding.putMember("log", log);
         handler = context.getExportedMembers().get("handleRequest").as(RequestHandler.class);
         context.onLifecycleEvent("start");
     }
 
+    @SneakyThrows
     @Override
-    public void stop(Promise<Void> stopPromise) throws Exception {
-        super.stop(stopPromise);
+    public void stop() {
+        super.stop();
         context.onLifecycleEvent("stop");
         context.close();
     }
