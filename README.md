@@ -45,6 +45,18 @@ EOF
 curl http://test.localhost:8081/ -vv
 ```
 
+## Why Vert.x instead of Virtual Threads?
+Context is not thread-safe, yet running scripts requires Context.
+To enhance concurrency through multithreading, you must manage these Contexts and script code via synchronisation or thread locals. 
+For Virtual Threads, their primary feature is scalability; however, due to the aforementioned limitations, 
+you are forced to either create a Context for each thread or degrade to serial execution due to lock contention (the worst-case scenario).
+Therefore, in this scenario, Virtual Threads are not very effective, and we ultimately revert to thread reuse. 
+Vert.x's event loop is an excellent choice for this purpose. The event loop not only resolves the management issues of
+thread-unsafe objects like Context through thread encapsulation but also enables multiple workers to run "concurrently" (#9) , 
+while staying in same threads—something Virtual Threads cannot achieve. This is 
+because you cannot allocate the time slice of a thread to other workers while a
+worker is waiting for an I/O operation; otherwise, you would still end up reverting to the event loop in some form.
+
 ## Roadmap
 - Basic Functionality
   - [x] Load script (per-domain, aka virtual host) and serve HTTP requests.
