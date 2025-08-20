@@ -37,7 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Log4j2
-public class PersistDeploymentPlugin implements EdgePlugin, EventListenerHost {
+public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlugin.PersistRulesConfig>, EventListenerHost {
     protected EdgeServer server;
     protected final ObjectMapper mapper = new ObjectMapper();
     @Getter
@@ -97,7 +97,7 @@ public class PersistDeploymentPlugin implements EdgePlugin, EventListenerHost {
         log.info("All deployments saved without exception!");
     }
 
-    record PersistRulesConfig(
+    public record PersistRulesConfig(
             String savePath
     ) implements PluginConfig {
         public PersistRulesConfig() {
