@@ -17,6 +17,7 @@
 
 package io.ib67.edge.worker;
 
+import io.ib67.edge.Deployment;
 import io.ib67.edge.api.script.RequestHandler;
 import io.ib67.edge.api.script.http.EdgeRequest;
 import io.ib67.edge.script.context.ScriptContext;
@@ -33,11 +34,14 @@ import lombok.extern.log4j.Log4j2;
 public class ScriptWorker extends Worker {
     @Getter
     protected final ScriptContext context;
+    @Getter
+    protected final Deployment deployment;
     protected RequestHandler handler;
 
-    public ScriptWorker(ScriptContext context, Runnable onClose) {
+    public ScriptWorker(ScriptContext context, Deployment deployment, Runnable onClose) {
         super(onClose);
         this.context = context;
+        this.deployment = deployment;
     }
 
     @SneakyThrows

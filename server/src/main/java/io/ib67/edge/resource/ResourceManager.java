@@ -17,7 +17,7 @@
 
 package io.ib67.edge.resource;
 
-import io.ib67.edge.api.script.ExportToScript;
+import io.ib67.edge.api.script.server.EdgeResourceManager;
 import io.ib67.edge.resource.pool.SimpleResourcePool;
 import io.ib67.edge.resource.pool.SynchronizedResourcePool;
 import io.ib67.edge.resource.pool.ThreadLocalPool;
@@ -26,12 +26,12 @@ import io.vertx.core.Future;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ResourceManager {
+public class ResourceManager implements EdgeResourceManager {
     protected final Map<Class<?>, Resource<?>> resources = new ConcurrentHashMap<>();
     protected final Map<Resource<?>, ResourcePool<?>> pooledResources = new ConcurrentHashMap<>();
 
-    @ExportToScript
-    public <T> Future<Recyclable<T>> getResource(Class<T> type) {
+    @Override
+    public <T> Future<Recyclable<T>> fetch(Class<T> type) {
         var resource = resources.get(type);
         if (resource == null) {
             return Future.failedFuture("Resource not found: " + type);
@@ -40,6 +40,10 @@ public class ResourceManager {
             return Future.succeededFuture(new Recyclable.NotRecyclable<>((T) resource.resourceFactory().get()));
         }
         return ((ResourcePool<T>) pooledResources.get(resource)).acquireResource();
+    }
+
+    public <T> Resource<T> getResource(Class<T> type) {
+        return (Resource<T>) resources.get(type);
     }
 
     public <T> void registerResource(Class<T> type, Resource<T> resource) {

@@ -17,9 +17,14 @@
 
 package io.ib67.edge.resource;
 
+import io.ib67.edge.api.script.ExportToScript;
+
+@ExportToScript
 public interface Recyclable<T> {
+    @ExportToScript
     T unwrap();
 
+    @ExportToScript
     default void recycle(){}
 
     record NotRecyclable<T>(T unwrap) implements Recyclable<T> { }

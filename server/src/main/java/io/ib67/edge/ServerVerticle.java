@@ -35,6 +35,7 @@ import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.graalvm.polyglot.Value;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Log4j2
@@ -75,14 +76,19 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     public Future<String> deploy(Deployment deployment) {
         return workerRouter.registerWorker(
                 deployment.name(),
-                () -> Result.fromAny(() -> runtime.create(deployment.source(), this::injectDependencies))
-                        .map(scriptContext -> new ScriptWorker(scriptContext, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
+                () -> Result.fromAny(() -> runtime.create(deployment.source(), v -> injectDependencies(v, deployment)))
+                        .map(scriptContext -> new ScriptWorker(scriptContext, deployment, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
                         .orElseThrow()
         ).onFailure(err -> log.error("Cannot deploy worker for deployment {}", deployment.name(), err));
     }
 
-    private void injectDependencies(Value value) {
+    private void injectDependencies(Value value, Deployment deployment) {
         value.putMember("managedRes", resourceManager);
+        var env = new HashMap<>(deployment.env());
+        env.put("RUNTIME", "edge");
+        env.put("DEPLOYMENT_SINCE", String.valueOf(System.currentTimeMillis()));
+        env.put("DEPLOYMENT_NAME", deployment.name());
+        value.putMember("env", env);
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {

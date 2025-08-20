@@ -25,7 +25,7 @@ import org.graalvm.polyglot.io.IOAccess;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-public class ScriptRuntime {
+public class ScriptRuntime implements AutoCloseable {
     protected final Engine engine;
 
     public ScriptRuntime(Engine engine) {
@@ -63,5 +63,10 @@ public class ScriptRuntime {
                 bindingOperator.accept(binding);
             }
         };
+    }
+
+    @Override
+    public void close() throws Exception {
+        engine.close(true);
     }
 }

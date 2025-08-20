@@ -23,10 +23,16 @@ import io.ib67.edge.serializer.SourceDeserializer;
 import io.ib67.edge.serializer.SourceSerializer;
 import org.graalvm.polyglot.Source;
 
+import java.util.Map;
+
 public record Deployment(
         String name,
+        Map<String, String> env,
         @JsonSerialize(using = SourceSerializer.class)
         @JsonDeserialize(using = SourceDeserializer.class)
         Source source
 ) {
+    public Deployment {
+        if(env == null) env = Map.of();
+    }
 }

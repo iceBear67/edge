@@ -4,14 +4,16 @@ Content-Type: application/json
 
 {
   "name" : "test",
-  "version" : "0.0.1",
+  "env": {
+    "TEST": "1"
+  },
   "source" : {
     "name" : "test.mjs",
     "mime" : null,
     "file" : null,
     "language" : "js",
     "type" : "string",
-    "data" : "export function handleRequest(request) {\n    request.response().end(\"hello\");\n}\n"
+    "data" : "export function handleRequest(request) {request.response().end(`${env.DEPLOYMENT_NAME} is now running on ${env.RUNTIME} with TEST = ${env.TEST}`);\n}\n"
   }
 }
 ###
