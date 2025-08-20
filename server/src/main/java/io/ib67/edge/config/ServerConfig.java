@@ -17,7 +17,6 @@
 
 package io.ib67.edge.config;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -26,7 +25,6 @@ public record ServerConfig(
         int listenPort,
         String controlListenHost,
         int controlListenPort, // -1 to disable
-        List<String> builtInPlugins,
         Map<String, String> engineOptions,
         RuntimeConfig runtime
 ) {
@@ -36,9 +34,6 @@ public record ServerConfig(
                 8080,
                 "localhost",
                 8081,
-                List.of(
-                    "persist deployment"
-                ),
                 Map.of(),
                 new RuntimeConfig(
                         "./lib",

@@ -19,14 +19,17 @@ package io.ib67.edge.plugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ib67.edge.Deployment;
-import io.ib67.edge.api.EdgePlugin;
 import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.LifecycleEvents;
 import io.ib67.edge.api.event.init.EdgeServerInitializedEvent;
+import io.ib67.edge.api.plugin.ConfigHolder;
+import io.ib67.edge.api.plugin.EdgePlugin;
+import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.worker.ScriptWorker;
 import io.ib67.kiwi.event.api.EventBus;
 import io.ib67.kiwi.event.api.EventListenerHost;
 import io.ib67.kiwi.event.api.annotation.SubscribeEvent;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
@@ -37,10 +40,18 @@ import java.nio.file.Path;
 public class PersistDeploymentPlugin implements EdgePlugin, EventListenerHost {
     protected EdgeServer server;
     protected final ObjectMapper mapper = new ObjectMapper();
-    protected final Path path = Path.of("saved_deployments");
+    @Getter
+    protected final ConfigHolder<PersistRulesConfig> config = new ConfigHolder<>(PersistRulesConfig.class, PersistRulesConfig::new);
+    protected Path path;
+
+    @Override
+    public String getName() {
+        return "persist deployments";
+    }
 
     @Override
     public void registerListener(EventBus bus) {
+        path = Path.of(config.getConfig().savePath());
         this.registerTo(bus);
     }
 
@@ -80,9 +91,17 @@ public class PersistDeploymentPlugin implements EdgePlugin, EventListenerHost {
             var value = entry.getValue();
             if (!(value instanceof ScriptWorker worker)) continue;
             var save = path.resolve(name + ".json");
-            Files.write(save, mapper.writeValueAsBytes(new Deployment(name, worker.getContext().getSource())));
+            Files.write(save, mapper.writeValueAsBytes(worker.getDeployment()));
             log.info("Saved deployment: {}", name);
         }
         log.info("All deployments saved without exception!");
+    }
+
+    record PersistRulesConfig(
+            String savePath
+    ) implements PluginConfig {
+        public PersistRulesConfig() {
+            this("saved_deployments");
+        }
     }
 }

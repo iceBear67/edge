@@ -17,17 +17,19 @@
 
 package io.ib67.edge;
 
-import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.ib67.edge.api.EdgePlugin;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.ib67.edge.api.event.LifecycleEvents;
 import io.ib67.edge.api.event.init.EdgeServerInitializedEvent;
 import io.ib67.edge.api.event.init.RuntimeInitializedEvent;
+import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.future.Thenable;
 import io.ib67.edge.command.CommandLoop;
 import io.ib67.edge.command.StopCommand;
+import io.ib67.edge.config.PluginConfig;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.plugin.PersistDeploymentPlugin;
 import io.ib67.edge.script.IsolatedRuntime;
@@ -46,18 +48,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Supplier;
 
 @Log4j2
 public class Main {
-    private static final String CONFIG_PATH = System.getProperty("edge.config", "config.json");
-    private static final Map<String, Supplier<PersistDeploymentPlugin>> BUILT_IN_PLUGINS;
+    private static final String CONFIG_PATH = System.getProperty("edge.config", "config.yml");
+    private static final String PLUGIN_CONFIG_PATH = System.getProperty("edge.config.plugin", "plugin.yml");
+    private static final Map<String, Supplier<EdgePlugin>> BUILT_IN_PLUGINS;
+    private static final ObjectMapper CONFIG_MAPPER = YAMLMapper.builder()
+            .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
+            .configure(SerializationFeature.INDENT_OUTPUT, true)
+            .build();
+    ;
 
     static {
         BUILT_IN_PLUGINS = Map.of(
-                "persist deployments", PersistDeploymentPlugin::new
+                "persistent deployments", PersistDeploymentPlugin::new
         );
     }
 
@@ -65,11 +73,7 @@ public class Main {
     public static void main(String[] args) {
         var begin = System.currentTimeMillis();
         log.info("Initializing edge server...");
-        var om = JsonMapper.builder()
-                .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
-                .configure(JsonParser.Feature.IGNORE_UNDEFINED, true)
-                .configure(SerializationFeature.INDENT_OUTPUT, true)
-                .build();
+        var om = CONFIG_MAPPER;
         var configFile = new File(CONFIG_PATH);
         if (!configFile.exists()) {
             om.writeValue(configFile, ServerConfig.defaultConfig());
@@ -77,9 +81,10 @@ public class Main {
         var serverConfig = om.readValue(configFile, ServerConfig.class);
         var vertx = Vertx.vertx();
         var bus = new HierarchyEventBus();
-        loadPlugins(serverConfig, bus);
-        var engine = Engine.newBuilder()
+        loadPlugins(bus);
+        var engine = Engine.newBuilder("js")
                 .in(InputStream.nullInputStream())
+                .err(OutputStream.nullOutputStream())
                 .out(OutputStream.nullOutputStream()) // todo logging management
                 .options(serverConfig.engineOptions())
                 .build();
@@ -118,7 +123,7 @@ public class Main {
             log.info("Shutting down server...");
             bus.post(LifecycleEvents.SERVER_STOP);
         }));
-        log.info("Server started! ({}s)", (System.currentTimeMillis() - begin)/1000);
+        log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
         initREPL();
     }
 
@@ -129,23 +134,49 @@ public class Main {
         commandLoop.run(System.in);
     }
 
-    private static void loadPlugins(ServerConfig config, EventBus bus) {
+    @SneakyThrows
+    private static void loadPlugins(EventBus bus) {
         var pm = new DefaultPluginManager();
         pm.loadPlugins();
         pm.startPlugins();
-        var builtIn = config.builtInPlugins();
-        if(builtIn == null) builtIn = List.of();
-        for (String builtInPlugin : builtIn) {
-            var pluginSupplier = BUILT_IN_PLUGINS.get(builtInPlugin);
-            if (pluginSupplier == null) {
-                log.error("No built-in plugin named `{}` were found.", builtInPlugin);
-                continue;
-            }
-            pluginSupplier.get().registerListener(bus);
+        var pathToPluginConfig = Path.of(PLUGIN_CONFIG_PATH);
+        PluginConfig pluginConfig;
+        if (Files.notExists(pathToPluginConfig)) {
+            pluginConfig = new PluginConfig();
+        } else {
+            pluginConfig = CONFIG_MAPPER.readValue(Files.readAllBytes(pathToPluginConfig), PluginConfig.class);
         }
+
+        var enabledExtensions = new ArrayList<EdgePlugin>();
+        BUILT_IN_PLUGINS.entrySet().stream()
+                .filter(it -> pluginConfig.enabledPlugins().contains(it.getKey()))
+                .forEach(it -> enabledExtensions.add(it.getValue().get()));
+
         var extensions = pm.getExtensions(EdgePlugin.class);
-        for (EdgePlugin extension : extensions) {
+        extensions.stream()
+                .filter(it->it.getName() != null && !it.getName().isBlank())
+                .filter(it->pluginConfig.enabledPlugins().contains(it.getName()))
+                .forEach(enabledExtensions::add);
+        var superConfig = pluginConfig.configs();
+        var markForRecode = false;
+        for (EdgePlugin extension : enabledExtensions) {
+            var name = extension.getName();
+            var pConfig = extension.getConfig();
+            if (pConfig != null) {
+                var _config = superConfig.get(name);
+                if (_config != null && pConfig.getType() == _config.getClass()) {
+                    pConfig.setConfig(_config);
+                } else {
+                    var defaultConfig = pConfig.getInitializer().get();
+                    superConfig.put(name, (io.ib67.edge.api.plugin.PluginConfig) defaultConfig);
+                    pConfig.setConfig((io.ib67.edge.api.plugin.PluginConfig) defaultConfig);
+                    markForRecode = true;
+                }
+            }
             extension.registerListener(bus);
+        }
+        if(markForRecode){
+            Files.write(pathToPluginConfig, CONFIG_MAPPER.writeValueAsBytes(pluginConfig));
         }
     }
 }

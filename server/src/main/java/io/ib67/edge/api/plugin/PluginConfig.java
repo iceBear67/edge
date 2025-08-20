@@ -15,11 +15,16 @@
  *
  */
 
-package io.ib67.edge.api;
+package io.ib67.edge.api.plugin;
 
-import io.ib67.kiwi.event.api.EventBus;
-import org.pf4j.ExtensionPoint;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-public interface EdgePlugin extends ExtensionPoint {
-    void registerListener(EventBus bus);
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "@class"
+)
+@JsonSubTypes({})
+public interface PluginConfig {
 }

@@ -59,7 +59,7 @@ curl http://test.localhost:8081/ -vv
     - [ ] Autoconfigured database table and JDBC connection for guest code.
     - [ ] Autoconfigured Redis connection for guest code.
 - Security Features (but we are not intended for sandboxes.)
-  - [ ] From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED`
+  - [ ] ~~From `SandboxPolicy.TRUSTED` to `SandboxPolicy.UNTRUSTED`~~ That will sacrifice a lot of features, not worth doing it.
   - [x] Isolation of trusted codes "libraries" and guest code.
     - Thus, Java world is only accessible to "libraries" from host.
   - [ ] Resource limitation

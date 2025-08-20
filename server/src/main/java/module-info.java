@@ -12,6 +12,8 @@ module edge.server {
     requires kiwi.lang;
     requires kiwi.event;
     requires org.pf4j;
+    requires com.fasterxml.jackson.dataformat.yaml;
+    requires org.jetbrains.annotations;
     exports io.ib67.edge.api.script.future;
     exports io.ib67.edge.api.script.http;
     exports io.ib67.edge;
