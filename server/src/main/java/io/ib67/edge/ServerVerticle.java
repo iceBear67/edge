@@ -30,6 +30,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.net.HostAndPort;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -92,7 +93,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {
-        var host = httpServerRequest.getHeader("Host");
+        var host = HostAndPort.authority(httpServerRequest.getHeader("Host")).host();;
         if (host == null || host.isEmpty()) {
             httpServerRequest.end();
             return;
