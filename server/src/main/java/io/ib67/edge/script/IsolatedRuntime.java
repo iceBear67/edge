@@ -19,6 +19,7 @@ package io.ib67.edge.script;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.jimfs.Jimfs;
+import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
 import io.ib67.edge.script.locator.ModuleLocator;
@@ -318,7 +319,7 @@ public class IsolatedRuntime extends ScriptRuntime {
             return getScriptContext().getModuleExports().containsValue(value);
         }
 
-        @HostAccess.Export
+        @ExportToScript
         @Override
         public Object get(Object key) {
             return getScriptContext().getModuleExports().get(key);
@@ -345,13 +346,13 @@ public class IsolatedRuntime extends ScriptRuntime {
         }
 
         @Override
-        @HostAccess.Export
+        @ExportToScript
         public Set<String> keySet() {
             return getScriptContext().getModuleExports().keySet();
         }
 
         @Override
-        @HostAccess.Export
+        @ExportToScript
         public Collection<Object> values() {
             return (Collection<Object>) (Object) getScriptContext().getModuleExports().values();
         }

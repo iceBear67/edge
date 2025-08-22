@@ -17,11 +17,11 @@
 
 package io.ib67.edge.script.context;
 
+import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.script.exception.ContextInitException;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -78,7 +78,7 @@ public class ScriptContext implements AutoCloseable {
     }
 
     public void onLifecycleEvent(String event) {
-        if(!initialized) throw new IllegalStateException("Script context is not initialized");
+        if (!initialized) throw new IllegalStateException("Script context is not initialized");
         for (Runnable managedResource : lifecycleHandlers.getOrDefault(event, List.of())) {
             try {
                 managedResource.run();
@@ -89,19 +89,19 @@ public class ScriptContext implements AutoCloseable {
     }
 
     public Map<String, Value> getExportedMembers() {
-        if(!initialized) throw new IllegalStateException("Script context is not initialized");
+        if (!initialized) throw new IllegalStateException("Script context is not initialized");
         return Collections.unmodifiableMap(exportedMembers);
     }
 
     @Override
     public void close() throws IOException {
-        if(!initialized) return;
+        if (!initialized) return;
         onLifecycleEvent("clean");
         scriptContext.close(true);
     }
 
     public class ScriptInterface {
-        @HostAccess.Export
+        @ExportToScript
         public void on(String event, Value runnable) {
             var handlers = lifecycleHandlers.computeIfAbsent(event, k -> new ArrayList<>());
             if (runnable.canExecute()) {

@@ -6,3 +6,4 @@ STARTS_WITH Lio/vertx/core/Future;
 STARTS_WITH Lio/vertx/core/Promise;
 STARTS_WITH Lio/vertx/core/AsyncResult;
 STARTS_WITH Lio/vertx/core/buffer/Buffer;
+STARTS_WITH Lorg/apache/logging/log4j/Logger;

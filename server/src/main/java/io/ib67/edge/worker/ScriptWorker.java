@@ -25,23 +25,25 @@ import io.ib67.edge.serializer.HttpRequestBox;
 import io.vertx.core.eventbus.Message;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * ScriptWorker 将请求转发给关联起来的脚本。脚本需要符合 esm 规范返回 export {}
  */
-@Log4j2
 public class ScriptWorker extends Worker {
     @Getter
     protected final ScriptContext context;
     @Getter
     protected final Deployment deployment;
+    protected final Logger log;
     protected RequestHandler handler;
 
     public ScriptWorker(ScriptContext context, Deployment deployment, Runnable onClose) {
         super(onClose);
         this.context = context;
         this.deployment = deployment;
+        log = LogManager.getLogger("service-" + deployment.name());
     }
 
     @SneakyThrows
