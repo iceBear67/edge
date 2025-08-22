@@ -22,6 +22,8 @@ import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
 import org.graalvm.polyglot.Value;
 
+import java.util.function.BiConsumer;
+
 /**
  * this interface will be mixed into {@link io.vertx.core.Future}
  */
@@ -35,6 +37,16 @@ public interface Thenable {
     @SuppressWarnings("unchecked")
     @ExportToScript
     default void then(Value onResolve, Value onReject) {
-        $().onSuccess(onResolve::executeVoid).onFailure(onReject::executeVoid);
+        $().onSuccess(onResolve::executeVoid)
+                .onFailure(onReject::executeVoid);
+    }
+
+    static Thenable from(BiConsumer<Value, Value> onResolveAndReject) {
+        return new Thenable() {
+            @Override
+            public void then(Value onResolve, Value onReject) {
+                onResolveAndReject.accept(onResolve, onReject);
+            }
+        };
     }
 }
