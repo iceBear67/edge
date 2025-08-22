@@ -66,6 +66,7 @@ class ScriptContextTest {
                 export {a,b};
                 """, "test.mjs").build();
         var scriptContext = new ScriptContext(context, source);
+        scriptContext.init();
         assertEquals(2, scriptContext.getExportedMembers().size());
         assertEquals(1, scriptContext.getExportedMembers().get("a").asInt());
         assertEquals(2, scriptContext.getExportedMembers().get("b").asInt());
@@ -82,6 +83,7 @@ class ScriptContextTest {
                 """);
         context.getBindings("js").putMember("testHandler", testHandler);
         var sc = new ScriptContext(context, source);
+        sc.init();
         sc.onLifecycleEvent("customEvent");
         assertTrue(onCleanRun.get());
         onCleanRun.set(false);

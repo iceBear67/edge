@@ -103,6 +103,7 @@ class IsolatedRuntimeTest {
                 export function test(){writePrivileged(outputPath)}
                 """, "test.mjs").build();
         var context = runtime.create(callLibrarySource, it -> it.putMember("outputPath", outputPath));
+        context.init();
         context.getExportedMembers().get("test").executeVoid();
         context.close();
         assertTrue(Files.exists(outputPath));

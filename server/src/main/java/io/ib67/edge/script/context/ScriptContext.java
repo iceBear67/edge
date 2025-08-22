@@ -78,6 +78,7 @@ public class ScriptContext implements AutoCloseable {
     }
 
     public void onLifecycleEvent(String event) {
+        if(!initialized) throw new IllegalStateException("Script context is not initialized");
         for (Runnable managedResource : lifecycleHandlers.getOrDefault(event, List.of())) {
             try {
                 managedResource.run();
@@ -88,11 +89,13 @@ public class ScriptContext implements AutoCloseable {
     }
 
     public Map<String, Value> getExportedMembers() {
+        if(!initialized) throw new IllegalStateException("Script context is not initialized");
         return Collections.unmodifiableMap(exportedMembers);
     }
 
     @Override
     public void close() throws IOException {
+        if(!initialized) return;
         onLifecycleEvent("clean");
         scriptContext.close(true);
     }
