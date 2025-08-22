@@ -1,5 +1,9 @@
 name: Build and Test
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   workflow_dispatch:
   push:
@@ -14,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '24'      # See 'Options' for more details
+          java-version: '21'      # See 'Options' for more details
           distribution: 'graalvm' # See 'Supported distributions' for available options
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Gradle
