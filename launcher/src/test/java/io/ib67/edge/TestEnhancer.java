@@ -26,9 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import static java.lang.invoke.MethodHandles.lookup;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,7 +57,6 @@ public class TestEnhancer implements Opcodes {
         method.visitEnd();
         cw.visitField(ACC_PUBLIC + ACC_STATIC, "test", "Ljava/lang/String;", null, null);
         var clazzByte = enhancer.enhance(null, cw.toByteArray());
-        Files.write(Path.of("test.class"), clazzByte);
         var enhanced = lookup().defineClass(clazzByte);
         assertTrue(enhanced.isAnnotationPresent(Deprecated.class));
         assertTrue(enhanced.getMethod("testM").isAnnotationPresent(Deprecated.class));
