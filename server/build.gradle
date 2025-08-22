@@ -17,6 +17,7 @@
 
 configurations {
     mockitoAgent
+    edgeLauncherAgent
 }
 
 dependencies {
@@ -44,10 +45,14 @@ dependencies {
     mockitoAgent(libs.mockito) {
         transitive = false
     }
+    edgeLauncherAgent(project(":launcher")){
+        transitive = false // it's 0 dep
+    }
 }
 
 tasks {
     test {
         jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+        jvmArgs += "-javaagent:${configurations.edgeLauncherAgent.asPath}"
     }
 }
