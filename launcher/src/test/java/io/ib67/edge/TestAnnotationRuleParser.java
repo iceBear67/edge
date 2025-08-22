@@ -33,11 +33,11 @@ public class TestAnnotationRuleParser {
                 @java/lang/Override2
                 TYPE io/ib67/edge/enhance/EdgeClassEnhancer
                 """;
-        var result = new AnnotationRuleParser().parse(rule);
+        var result = AnnotationRuleParser.parse(rule);
         assertTrue(result.stream().anyMatch(it -> it.descriptor().equals("Ljava/lang/Override;")));
         assertTrue(result.stream().anyMatch(it -> it.descriptor().equals("Ljava/lang/Override2;")));
         assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.METHOD, "Lio/ib67/edge/enhance/EdgeClassEnhancer;addTransformer(Ljava/util/function/ToIntFunction;Ljava/util/function/Supplier;)Lio/ib67/edge/enhance/EdgeClassEnhancer;")));
         assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.FIELD, "Lio/ib67/edge/enhance/EdgeClassEnhancer;transformers")));
-        assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.CLASS, "io/ib67/edge/enhancer/EdgeClassEnhancer")));
+        assertTrue(result.stream().anyMatch(it -> it.shouldEnhance(AnnotationEnhancer.EnhanceType.CLASS, "io/ib67/edge/enhance/EdgeClassEnhancer")));
     }
 }

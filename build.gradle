@@ -17,6 +17,7 @@
 
 plugins {
     id 'java'
+    id 'jacoco'
     id("io.freefair.lombok") version libs.versions.lombok
 }
 
