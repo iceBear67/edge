@@ -37,7 +37,8 @@ public interface Thenable {
     @SuppressWarnings("unchecked")
     @ExportToScript
     default void then(Value onResolve, Value onReject) {
-        $().onSuccess(onResolve::executeVoid).onFailure(onReject::executeVoid);
+        $().onSuccess(onResolve::executeVoid)
+                .onFailure(onReject::executeVoid);
     }
 
     static Thenable from(BiConsumer<Value, Value> onResolveAndReject) {

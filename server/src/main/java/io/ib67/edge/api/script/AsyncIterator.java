@@ -20,15 +20,16 @@ package io.ib67.edge.api.script;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 
 @ExportToScript
-public class AsyncIterator<T> implements Iterator<Future<T>> {
+public class AsyncIterator<T> implements Iterator<Future<T>>, Iterable<Future<T>> {
     protected final Vertx vertx;
     protected final Iterator<T> iterator;
     protected final int stepsPerLoop;
-    protected int steps;
+    protected long steps;
 
     public AsyncIterator(Vertx vertx, Iterator<T> iterator, int steps) {
         this.vertx = vertx;
@@ -50,5 +51,10 @@ public class AsyncIterator<T> implements Iterator<Future<T>> {
             return promise.future();
         }
         return Future.succeededFuture(iterator.next());
+    }
+
+    @Override
+    public @NotNull Iterator<Future<T>> iterator() {
+        return this;
     }
 }
