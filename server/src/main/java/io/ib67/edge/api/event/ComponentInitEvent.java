@@ -15,12 +15,25 @@
  *
  */
 
-package io.ib67.edge.api.event.init;
+package io.ib67.edge.api.event;
 
-import io.ib67.edge.script.ScriptRuntime;
+import io.ib67.kiwi.TypeToken;
 import io.ib67.kiwi.event.api.Event;
 
-public record RuntimeInitializedEvent(
-        ScriptRuntime runtime
-) implements Event {
+import java.util.Objects;
+
+public record ComponentInitEvent<T>(T component, Class<T> preferredType) implements Event {
+    public ComponentInitEvent(T component) {
+        this(component, (Class<T>) component.getClass());
+    }
+
+    public ComponentInitEvent {
+        Objects.requireNonNull(component);
+        if(preferredType == null) preferredType = (Class<T>) component.getClass();
+    }
+
+    @Override
+    public TypeToken<?> type() {
+        return TypeToken.getParameterized(ComponentInitEvent.class, preferredType);
+    }
 }

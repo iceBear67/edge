@@ -15,12 +15,19 @@
  *
  */
 
-package io.ib67.edge.api.event.init;
+package io.ib67.edge.api.event;
 
-import io.ib67.edge.api.EdgeServer;
+import io.ib67.edge.command.Command;
 import io.ib67.kiwi.event.api.Event;
+import lombok.RequiredArgsConstructor;
 
-public record EdgeServerInitializedEvent(
-        EdgeServer edgeServer
-) implements Event {
+import java.util.function.Consumer;
+
+@RequiredArgsConstructor
+public class CommandInitEvent implements Event {
+    protected final Consumer<Command> register;
+
+    public void registerCommand(Command command) {
+        register.accept(command);
+    }
 }

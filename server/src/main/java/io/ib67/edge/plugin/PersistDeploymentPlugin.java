@@ -20,8 +20,8 @@ package io.ib67.edge.plugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ib67.edge.Deployment;
 import io.ib67.edge.api.EdgeServer;
+import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.LifecycleEvents;
-import io.ib67.edge.api.event.init.EdgeServerInitializedEvent;
 import io.ib67.edge.api.plugin.ConfigHolder;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.plugin.PluginConfig;
@@ -57,8 +57,8 @@ public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlug
 
     @SubscribeEvent
     @SneakyThrows
-    void handleServerInitialized(EdgeServerInitializedEvent edgeServerInitializedEvent) {
-        this.server = edgeServerInitializedEvent.edgeServer();
+    void handleServerInitialized(ComponentInitEvent<EdgeServer> edgeServerInitializedEvent) {
+        this.server = edgeServerInitializedEvent.component();
         log.info("Locating previously saved deployments...");
         if (Files.notExists(path)) {
             log.info("No deployments are found.");

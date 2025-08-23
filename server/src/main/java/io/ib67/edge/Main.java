@@ -21,12 +21,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.ib67.edge.api.EdgeServer;
+import io.ib67.edge.api.event.CommandInitEvent;
+import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.LifecycleEvents;
-import io.ib67.edge.api.event.init.EdgeServerInitializedEvent;
-import io.ib67.edge.api.event.init.RuntimeInitializedEvent;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.future.Thenable;
+import io.ib67.edge.command.Command;
 import io.ib67.edge.command.CommandLoop;
 import io.ib67.edge.command.StopCommand;
 import io.ib67.edge.config.PluginConfig;
@@ -100,7 +102,7 @@ public class Main {
         );
         runtime.setHostContextOptions(serverConfig.runtime().hostContextOptions());
         runtime.setGuestContextOptions(serverConfig.runtime().guestContextOptions());
-        bus.post(new RuntimeInitializedEvent(runtime));
+        bus.post(new ComponentInitEvent<>(runtime));
         log.info("Deploying server verticle...");
         var serverVerticle = new ServerVerticle(serverConfig.listenHost(), serverConfig.listenPort(), runtime, bus);
         vertx.deployVerticle(serverVerticle);
@@ -108,7 +110,7 @@ public class Main {
             log.info("Control server has been disabled.");
             return;
         }
-        bus.post(new EdgeServerInitializedEvent(serverVerticle));
+        bus.post(new ComponentInitEvent<>(serverVerticle, EdgeServer.class));
         log.info("Deploying control server...");
         var controlServerVerticle = new ControlServerVerticle(
                 serverConfig.controlListenHost(),
@@ -122,14 +124,17 @@ public class Main {
             bus.post(LifecycleEvents.SERVER_STOP);
         }));
         log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
-        initREPL();
+        var commands = new ArrayList<Command>();
+        commands.add(new StopCommand());
+        bus.post(new CommandInitEvent(commands::add));
+        var commandLoop = new CommandLoop(
+                commands.toArray(new Command[0])
+        );
+        initREPL(commandLoop);
     }
 
-    private static void initREPL() {
-        var commandLoop = new CommandLoop(
-                new StopCommand()
-        );
-        commandLoop.run(System.in);
+    private static void initREPL(CommandLoop loop) {
+        loop.run(System.in);
     }
 
     @SneakyThrows
