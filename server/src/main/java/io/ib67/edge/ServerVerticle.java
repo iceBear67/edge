@@ -45,6 +45,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     protected final String host;
     @Getter
     protected final int port;
+    @Getter
     protected final ScriptRuntime runtime;
     protected final EventBus eventBus;
     @Getter
@@ -118,10 +119,5 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     @Override
     public Map<String, Worker> getWorkers() {
         return workerRouter.getWorkers();
-    }
-
-    @Override
-    public ScriptRuntime getRuntime() {
-        return null;
     }
 }

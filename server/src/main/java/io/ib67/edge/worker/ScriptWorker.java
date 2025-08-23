@@ -43,7 +43,7 @@ public class ScriptWorker extends Worker {
         super(onClose);
         this.context = context;
         this.deployment = deployment;
-        log = LogManager.getLogger("service-" + deployment.name());
+        log = LogManager.getLogger("service-" + deployment.name()); // todo log registry
     }
 
     @SneakyThrows

@@ -57,11 +57,6 @@ public class Main {
     private static final String CONFIG_PATH = System.getProperty("edge.config", "config.yml");
     private static final String PLUGIN_CONFIG_PATH = System.getProperty("edge.config.plugin", "plugin.yml");
     private static final Map<String, Supplier<EdgePlugin>> BUILT_IN_PLUGINS;
-    private static final ObjectMapper CONFIG_MAPPER = YAMLMapper.builder()
-            .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
-            .configure(SerializationFeature.INDENT_OUTPUT, true)
-            .build();
-    ;
 
     static {
         BUILT_IN_PLUGINS = Map.of(
@@ -73,7 +68,10 @@ public class Main {
     public static void main(String[] args) {
         var begin = System.currentTimeMillis();
         log.info("Initializing edge server...");
-        var om = CONFIG_MAPPER;
+        var om =  YAMLMapper.builder()
+                .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
+                .configure(SerializationFeature.INDENT_OUTPUT, true)
+                .build();;
         var configFile = new File(CONFIG_PATH);
         if (!configFile.exists()) {
             om.writeValue(configFile, ServerConfig.defaultConfig());
@@ -81,7 +79,7 @@ public class Main {
         var serverConfig = om.readValue(configFile, ServerConfig.class);
         var vertx = Vertx.vertx();
         var bus = new HierarchyEventBus();
-        loadPlugins(bus);
+        loadPlugins(om, bus);
         var engine = Engine.newBuilder("js")
                 .in(InputStream.nullInputStream())
                 .err(OutputStream.nullOutputStream())
@@ -135,7 +133,7 @@ public class Main {
     }
 
     @SneakyThrows
-    private static void loadPlugins(EventBus bus) {
+    private static void loadPlugins(ObjectMapper configMapper, EventBus bus) {
         var pm = new DefaultPluginManager();
         pm.loadPlugins();
         pm.startPlugins();
@@ -144,7 +142,7 @@ public class Main {
         if (Files.notExists(pathToPluginConfig)) {
             pluginConfig = new PluginConfig();
         } else {
-            pluginConfig = CONFIG_MAPPER.readValue(Files.readAllBytes(pathToPluginConfig), PluginConfig.class);
+            pluginConfig = configMapper.readValue(Files.readAllBytes(pathToPluginConfig), PluginConfig.class);
         }
 
         var enabledExtensions = new ArrayList<EdgePlugin>();
@@ -176,7 +174,7 @@ public class Main {
             extension.registerListener(bus);
         }
         if(markForRecode){
-            Files.write(pathToPluginConfig, CONFIG_MAPPER.writeValueAsBytes(pluginConfig));
+            Files.write(pathToPluginConfig, configMapper.writeValueAsBytes(pluginConfig));
         }
     }
 }
