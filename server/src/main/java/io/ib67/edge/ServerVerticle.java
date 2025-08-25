@@ -18,6 +18,8 @@
 package io.ib67.edge;
 
 import io.ib67.edge.api.EdgeServer;
+import io.ib67.edge.api.event.AsyncWorkerDependencyEvent;
+import io.ib67.edge.api.event.PreRequestEvent;
 import io.ib67.edge.resource.ResourceManager;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
@@ -91,10 +93,15 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         env.put("DEPLOYMENT_SINCE", String.valueOf(System.currentTimeMillis()));
         env.put("DEPLOYMENT_NAME", deployment.name());
         value.putMember("env", env);
+        var event = new AsyncWorkerDependencyEvent(value, deployment);
+        eventBus.post(event);
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {
-        var host = HostAndPort.authority(httpServerRequest.getHeader("Host")).host();;
+        var host = HostAndPort.authority(httpServerRequest.getHeader("Host")).host();
+        var event = new PreRequestEvent(httpServerRequest);
+        eventBus.post(event);
+        if (event.isIntercepted()) return;
         if (host == null || host.isEmpty()) {
             httpServerRequest.end();
             return;
@@ -107,13 +114,15 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         }
         var prefix = host.substring(0, firstDot);
         var worker = workerRouter.getWorker(prefix);
+        event.setWorker(worker);
+        eventBus.post(event);
+        worker = event.getWorker();
         if (worker != null) {
             worker.handleRequest(getVertx(), httpServerRequest);
         } else {
             httpServerRequest.response().setStatusCode(404);
             httpServerRequest.response().end();
         }
-
     }
 
     @Override
