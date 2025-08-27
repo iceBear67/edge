@@ -27,6 +27,7 @@ public class GuiceExtensionFactory implements ExtensionFactory {
 
     @Override
     public <T> T create(Class<T> extensionClass) {
+        // this will also bind the instance into injector.
         return injector.getInstance(extensionClass);
     }
 }

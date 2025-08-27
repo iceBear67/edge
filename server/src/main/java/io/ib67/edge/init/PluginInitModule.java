@@ -19,7 +19,6 @@ package io.ib67.edge.init;
 
 import com.google.inject.AbstractModule;
 import io.ib67.edge.api.plugin.EdgePlugin;
-import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.plugin.EdgePluginManager;
 import lombok.RequiredArgsConstructor;
 import org.pf4j.PluginWrapper;
@@ -29,7 +28,6 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class PluginInitModule extends AbstractModule {
     protected final EdgePluginManager pluginManager;
-    protected final ServerConfig serverConfig;
 
     @Override
     protected void configure() {
@@ -37,14 +35,9 @@ public class PluginInitModule extends AbstractModule {
         for (PluginWrapper plugin : pluginManager.getPlugins()) {
             associationMap.put(plugin.getPluginClassLoader(), plugin);
         }
-        var enabledExtensions = pluginManager.getExtensions(EdgePlugin.class)
-                .stream().filter(it ->
-                        serverConfig.enabledPlugins().contains(
-                                associationMap.get(it.getClass().getClassLoader()).getPluginId()))
-                .toList();
+        var enabledExtensions = pluginManager.getExtensions(EdgePlugin.class);
         for (EdgePlugin extension : enabledExtensions) {
             pluginManager.addPlugin(extension);
-            bind((Class<EdgePlugin>) extension.getClass()).toInstance(extension);
         }
     }
 }
