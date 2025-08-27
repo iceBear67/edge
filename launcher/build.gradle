@@ -37,7 +37,7 @@ jar {
 }
 
 application {
-    mainClass = "io.ib67.edge.Main"
+    mainClass = "io.ib67.edge.Edge"
     applicationName = "edged"
     applicationDefaultJvmArgs = ["-javaagent:../agent/${jar.archiveFileName.get()}"]
 }

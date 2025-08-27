@@ -14,6 +14,8 @@ module edge.server {
     requires org.pf4j;
     requires com.fasterxml.jackson.dataformat.yaml;
     requires org.jetbrains.annotations;
+    requires com.google.guice;
+    provides io.ib67.edge.api.plugin.EdgePlugin with io.ib67.edge.plugin.PersistDeploymentPlugin;
     exports io.ib67.edge.api.script.future;
     exports io.ib67.edge.api.script.http;
     exports io.ib67.edge;
@@ -27,5 +29,8 @@ module edge.server {
     exports io.ib67.edge.script.exception;
     exports io.ib67.edge.script.io;
     exports io.ib67.edge.script.locator;
+    exports io.ib67.edge.init;
+    exports io.ib67.edge.api.plugin;
+    exports io.ib67.edge.api.event;
     exports io.ib67.edge.api.script;
 }

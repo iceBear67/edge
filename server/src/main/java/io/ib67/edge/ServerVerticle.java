@@ -21,6 +21,7 @@ import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.AsyncWorkerContextEvent;
 import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.PreRequestEvent;
+import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
@@ -52,10 +53,10 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     protected final EventBus eventBus;
     protected WorkerRouter workerRouter;
 
-    public ServerVerticle(String host, int port, ScriptRuntime runtime, EventBus eventBus) {
-        this.host = host;
+    public ServerVerticle(ServerConfig config, ScriptRuntime runtime, EventBus eventBus) {
+        this.host = config.listenHost();
         this.runtime = runtime;
-        this.port = port;
+        this.port = config.listenPort();
         this.eventBus = eventBus;
     }
 

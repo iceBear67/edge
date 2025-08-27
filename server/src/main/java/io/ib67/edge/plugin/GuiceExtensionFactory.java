@@ -15,21 +15,18 @@
  *
  */
 
-package io.ib67.edge.config;
+package io.ib67.edge.plugin;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.inject.Injector;
+import lombok.AllArgsConstructor;
+import org.pf4j.ExtensionFactory;
 
-public record AllPluginConfig(
-        List<String> enabledPlugins,
-        Map<String, io.ib67.edge.api.plugin.PluginConfig> configs
-) {
-    public AllPluginConfig(){
-        this(null,null);
-    }
-    public AllPluginConfig {
-        if(enabledPlugins == null) enabledPlugins = List.of();
-        if(configs == null) configs = new HashMap<>();
+@AllArgsConstructor
+public class GuiceExtensionFactory implements ExtensionFactory {
+    protected Injector injector;
+
+    @Override
+    public <T> T create(Class<T> extensionClass) {
+        return injector.getInstance(extensionClass);
     }
 }

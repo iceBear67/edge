@@ -18,17 +18,17 @@
 package io.ib67.edge.plugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import io.ib67.edge.Deployment;
 import io.ib67.edge.api.EdgeServer;
-import io.ib67.edge.api.event.ComponentInitEvent;
-import io.ib67.edge.api.event.LifecycleEvents;
+import io.ib67.edge.api.event.ServerStopEvent;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.worker.ScriptWorker;
 import io.ib67.kiwi.event.api.EventBus;
 import io.ib67.kiwi.event.api.EventListenerHost;
 import io.ib67.kiwi.event.api.annotation.SubscribeEvent;
-import io.vertx.core.Vertx;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
@@ -36,33 +36,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Log4j2
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlugin.PersistRulesConfig>, EventListenerHost {
-    protected EdgeServer server;
     protected final ObjectMapper mapper = new ObjectMapper();
-    protected Path path;
+    protected final PersistRulesConfig persistRulesConfig;
+    protected final EventBus bus;
+    protected final EdgeServer server;
 
-    @Override
-    public String getName() {
-        return "persist deployments";
+    public PersistDeploymentPlugin(){
+        throw new AssertionError("This constructor is a placeholder.");
     }
 
     @Override
-    public void init(Vertx vertx, EventBus bus, PersistRulesConfig config) {
-        assert config != null;
-        path = Path.of(config.savePath());
-        this.registerTo(bus);
-    }
-
-    @SubscribeEvent
     @SneakyThrows
-    void handleServerInitialized(ComponentInitEvent<EdgeServer> edgeServerInitializedEvent) {
-        this.server = edgeServerInitializedEvent.component();
+    public void init() {
+        this.registerTo(bus);
         log.info("Locating previously saved deployments...");
-        if (Files.notExists(path)) {
+        var savePath = Path.of(persistRulesConfig.savePath());
+        if (Files.notExists(savePath)) {
             log.info("No deployments are found.");
             return;
         }
-        try (var stream = Files.walk(path)) {
+        try (var stream = Files.walk(savePath)) {
             stream
                     .filter(Files::isRegularFile)
                     .peek(it -> log.info("Loading {}", it))
@@ -77,18 +72,18 @@ public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlug
 
     @SneakyThrows
     @SubscribeEvent
-    void handleSaveDeployments(LifecycleEvents event) {
-        if (event != LifecycleEvents.SERVER_STOP || server == null) return;
+    void handleSaveDeployments(ServerStopEvent event) {
         log.info("Saving deployments");
         var workers = server.getWorkers();
-        if (Files.notExists(path)) {
-            Files.createDirectory(path);
+        var savePath = Path.of(persistRulesConfig.savePath());
+        if (Files.notExists(savePath)) {
+            Files.createDirectory(savePath);
         }
         for (var entry : workers.entrySet()) {
             var name = entry.getKey();
             var value = entry.getValue();
             if (!(value instanceof ScriptWorker worker)) continue;
-            var save = path.resolve(name + ".json");
+            var save = savePath.resolve(name + ".json");
             Files.write(save, mapper.writeValueAsBytes(worker.getDeployment()));
             log.info("Saved deployment: {}", name);
         }

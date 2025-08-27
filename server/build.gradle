@@ -32,6 +32,7 @@ dependencies {
     api libs.log4j.slf4j.impl
     api libs.jetbrains.annotation
     api libs.pf4j
+    api libs.guice
     implementation platform("com.fasterxml.jackson:jackson-bom:${libs.versions.jackson}")
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
     implementation 'com.fasterxml.jackson.core:jackson-databind'

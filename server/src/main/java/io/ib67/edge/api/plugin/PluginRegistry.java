@@ -17,9 +17,12 @@
 
 package io.ib67.edge.api.plugin;
 
-import org.pf4j.ExtensionPoint;
+import org.jetbrains.annotations.Nullable;
 
-public interface EdgePlugin<T extends PluginConfig> extends ExtensionPoint {
-    //Vertx vertx, EventBus bus, @Nullable("If T is not set") T config
-    void init();
+import java.util.Collection;
+
+public interface PluginRegistry {
+    @Nullable <E extends EdgePlugin<?>> E getEdgePlugin(Class<E> plugin);
+
+    Collection<? extends EdgePlugin> getEdgePlugins();
 }
