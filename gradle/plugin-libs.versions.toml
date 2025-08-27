@@ -1,0 +1,8 @@
+[versions]
+rjdbc="5.0.3"
+
+[libraries]
+rjdbc = {module = "io.vertx:vertx-jdbc-client", version.ref="rjdbc"}
+
+[bundles]
+plugin-rjdbc = ["rjdbc"]

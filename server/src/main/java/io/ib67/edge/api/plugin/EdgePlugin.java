@@ -18,16 +18,12 @@
 package io.ib67.edge.api.plugin;
 
 import io.ib67.kiwi.event.api.EventBus;
+import io.vertx.core.Vertx;
 import org.jetbrains.annotations.Nullable;
 import org.pf4j.ExtensionPoint;
 
 public interface EdgePlugin<T extends PluginConfig> extends ExtensionPoint {
-    @Nullable
-    default ConfigHolder<T> getConfig() {
-        return null;
-    }
-
     String getName();
 
-    void registerListener(EventBus bus);
+    void init(Vertx vertx, EventBus bus, @Nullable("If T is not set") T config);
 }

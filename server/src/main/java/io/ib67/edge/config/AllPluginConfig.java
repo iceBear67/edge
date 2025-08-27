@@ -15,20 +15,21 @@
  *
  */
 
-package io.ib67.edge.api.event;
+package io.ib67.edge.config;
 
-import io.ib67.edge.Deployment;
-import io.ib67.edge.api.script.ExportToScript;
-import io.ib67.edge.worker.ScriptWorker;
-import io.ib67.kiwi.event.api.Event;
-import org.graalvm.polyglot.Value;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * The event is delivered when initializing a {@link ScriptWorker}'s binding.
- * You may listen to this event to supply new members to script context. When doing this,
- * you should also annotate {@link ExportToScript} on methods of these exposed objects, for visibility.
- *
- */
-@AsyncEvent
-public record AsyncWorkerDependencyEvent(Value binding, Deployment deployment) implements Event {
+public record AllPluginConfig(
+        List<String> enabledPlugins,
+        Map<String, io.ib67.edge.api.plugin.PluginConfig> configs
+) {
+    public AllPluginConfig(){
+        this(null,null);
+    }
+    public AllPluginConfig {
+        if(enabledPlugins == null) enabledPlugins = List.of();
+        if(configs == null) configs = new HashMap<>();
+    }
 }

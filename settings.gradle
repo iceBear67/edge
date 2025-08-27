@@ -17,10 +17,24 @@
 
 import java.nio.file.Files
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        pluginLibs {
+            from(files('./gradle/plugin-libs.versions.toml'))
+        }
+    }
+}
+
 rootProject.name = 'edge'
 
-include Files.list(rootProject.projectDir.toPath())
-        .filter {
-            Files.isDirectory(it) && Files.exists(it.resolve("build.gradle"))
-        }.map {it.fileName.toString()}
-        .toList()
+scanProjects(rootProject.projectDir.toPath().resolve('plugin'))
+scanProjects(rootProject.projectDir.toPath())
+
+def scanProjects(java.nio.file.Path path){
+    def root = rootProject.projectDir.toPath().toAbsolutePath().toString()
+    include Files.list(path)
+            .filter {
+                Files.isDirectory(it) && Files.exists(it.resolve("build.gradle"))
+            }.map {it.toAbsolutePath().toString().replace(root, "").replace('/',":")}
+            .toList()
+}

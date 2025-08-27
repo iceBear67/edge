@@ -19,6 +19,7 @@ package io.ib67.edge.script;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.jimfs.Jimfs;
+import io.ib67.edge.api.event.AsyncPrivilegeContextEvent;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.script.context.IncrementalModuleContext;
 import io.ib67.edge.script.io.ESModuleFS;
@@ -130,6 +131,14 @@ public class IsolatedRuntime extends ScriptRuntime {
                 scriptContext.evalModule(module, source);
             }
         }
+        var binding = scriptContext.getScriptContext().getBindings("js");
+        var event = new AsyncPrivilegeContextEvent(
+                new HashMap<>(),
+                new HashMap<>(),
+                binding
+        );
+        binding.putMember("env", event.env());
+        binding.putMember("plugins", event.plugins());
         return new ModuleContext(scriptContext, stubLocator);
     }
 

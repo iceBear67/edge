@@ -21,23 +21,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.CommandInitEvent;
 import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.LifecycleEvents;
 import io.ib67.edge.api.plugin.EdgePlugin;
+import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.api.script.future.Thenable;
 import io.ib67.edge.command.Command;
 import io.ib67.edge.command.CommandLoop;
 import io.ib67.edge.command.StopCommand;
-import io.ib67.edge.config.PluginConfig;
+import io.ib67.edge.config.AllPluginConfig;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.plugin.PersistDeploymentPlugin;
 import io.ib67.edge.script.IsolatedRuntime;
 import io.ib67.edge.script.locator.DirectoryModuleLocator;
+import io.ib67.kiwi.TypeToken;
 import io.ib67.kiwi.event.HierarchyEventBus;
 import io.ib67.kiwi.event.api.EventBus;
+import io.ib67.kiwi.routine.Fail;
+import io.ib67.kiwi.routine.Result;
+import io.ib67.kiwi.routine.Some;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import lombok.SneakyThrows;
@@ -70,10 +74,11 @@ public class Main {
     public static void main(String[] args) {
         var begin = System.currentTimeMillis();
         log.info("Initializing edge server...");
-        var om =  YAMLMapper.builder()
+        var om = YAMLMapper.builder()
                 .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
-                .build();;
+                .build();
+        ;
         var configFile = new File(CONFIG_PATH);
         if (!configFile.exists()) {
             om.writeValue(configFile, ServerConfig.defaultConfig());
@@ -81,7 +86,7 @@ public class Main {
         var serverConfig = om.readValue(configFile, ServerConfig.class);
         var vertx = Vertx.vertx();
         var bus = new HierarchyEventBus();
-        loadPlugins(om, bus);
+        loadPlugins(om, vertx, bus);
         var engine = Engine.newBuilder("js")
                 .in(InputStream.nullInputStream())
                 .err(OutputStream.nullOutputStream())
@@ -110,7 +115,6 @@ public class Main {
             log.info("Control server has been disabled.");
             return;
         }
-        bus.post(new ComponentInitEvent<>(serverVerticle, EdgeServer.class));
         log.info("Deploying control server...");
         var controlServerVerticle = new ControlServerVerticle(
                 serverConfig.controlListenHost(),
@@ -138,48 +142,73 @@ public class Main {
     }
 
     @SneakyThrows
-    private static void loadPlugins(ObjectMapper configMapper, EventBus bus) {
+    private static void loadPlugins(
+            ObjectMapper configMapper,
+            Vertx vertx,
+            EventBus bus
+    ) {
         var pm = new DefaultPluginManager();
         pm.loadPlugins();
         pm.startPlugins();
         var pathToPluginConfig = Path.of(PLUGIN_CONFIG_PATH);
-        PluginConfig pluginConfig;
+        AllPluginConfig allPluginConfig;
         if (Files.notExists(pathToPluginConfig)) {
-            pluginConfig = new PluginConfig();
+            allPluginConfig = new AllPluginConfig();
         } else {
-            pluginConfig = configMapper.readValue(Files.readAllBytes(pathToPluginConfig), PluginConfig.class);
+            allPluginConfig = configMapper.readValue(Files.readAllBytes(pathToPluginConfig), AllPluginConfig.class);
         }
 
         var enabledExtensions = new ArrayList<EdgePlugin>();
         BUILT_IN_PLUGINS.entrySet().stream()
-                .filter(it -> pluginConfig.enabledPlugins().contains(it.getKey()))
+                .filter(it -> allPluginConfig.enabledPlugins().contains(it.getKey()))
                 .forEach(it -> enabledExtensions.add(it.getValue().get()));
 
         var extensions = pm.getExtensions(EdgePlugin.class);
         extensions.stream()
-                .filter(it->it.getName() != null && !it.getName().isBlank())
-                .filter(it->pluginConfig.enabledPlugins().contains(it.getName()))
+                .filter(it -> it.getName() != null && !it.getName().isBlank())
+                .filter(it -> allPluginConfig.enabledPlugins().contains(it.getName()))
                 .forEach(enabledExtensions::add);
-        var superConfig = pluginConfig.configs();
+        var superConfig = allPluginConfig.configs();
         var markForRecode = false;
         for (EdgePlugin extension : enabledExtensions) {
             var name = extension.getName();
-            var pConfig = extension.getConfig();
-            if (pConfig != null) {
+            var type = TypeToken.resolve(extension.getClass()).inferType(EdgePlugin.class);
+            if (type.isWildcard() || type.isArray()) {
+                log.warn("{}: config type must not be array or wildcard.", name);
+                continue;
+            }
+            var configType = type.getTypeParams().getFirst().getBaseTypeRaw();
+            PluginConfig pluginConfig = null;
+            if (configType != AllPluginConfig.class) { // type of config provided.
                 var _config = superConfig.get(name);
-                if (_config != null && pConfig.getType() == _config.getClass()) {
-                    pConfig.setConfig(_config);
-                } else {
-                    var defaultConfig = pConfig.getInitializer().get();
-                    superConfig.put(name, (io.ib67.edge.api.plugin.PluginConfig) defaultConfig);
-                    pConfig.setConfig((io.ib67.edge.api.plugin.PluginConfig) defaultConfig);
+                if (_config != null) {
+                    if (configType != _config.getClass()) {
+                        log.warn("Type of configuration for plugin {} is different from {}!", name, configType);
+                        log.warn("Skipping this plugin.");
+                        continue;
+                    }
+                    pluginConfig = _config;
+                } else if (configType != null) {
+                    var defaultConfig = switch (Result.fromAny(() -> configType.getConstructor().newInstance())) {
+                        case Some(PluginConfig config) -> config;
+                        case Fail(Object reason) -> {
+                            log.warn("Failed to construct config for {}. Config classes must have a empty arg constructor and visible to eternal callers!", name);
+                            log.warn("Error: {}", reason);
+                            log.warn("Skipping this plugin.");
+                            yield null;
+                        }
+                        default -> throw new AssertionError("as");
+                    };
+                    if (defaultConfig == null) continue;
+                    superConfig.put(name, defaultConfig);
+                    pluginConfig = defaultConfig;
                     markForRecode = true;
                 }
             }
-            extension.registerListener(bus);
+            extension.init(vertx, bus, pluginConfig);
         }
-        if(markForRecode){
-            Files.write(pathToPluginConfig, configMapper.writeValueAsBytes(pluginConfig));
+        if (markForRecode) {
+            Files.write(pathToPluginConfig, configMapper.writeValueAsBytes(allPluginConfig));
         }
     }
 }

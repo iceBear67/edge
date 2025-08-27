@@ -25,6 +25,7 @@ import io.vertx.core.Future;
 import java.util.Map;
 
 public interface EdgeServer {
+
     Map<String, Worker> getWorkers();
 
     ScriptRuntime getRuntime();

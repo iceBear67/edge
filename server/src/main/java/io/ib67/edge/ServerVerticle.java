@@ -18,9 +18,9 @@
 package io.ib67.edge;
 
 import io.ib67.edge.api.EdgeServer;
-import io.ib67.edge.api.event.AsyncWorkerDependencyEvent;
+import io.ib67.edge.api.event.AsyncWorkerContextEvent;
+import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.PreRequestEvent;
-import io.ib67.edge.resource.ResourceManager;
 import io.ib67.edge.script.ScriptRuntime;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
@@ -50,8 +50,6 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     @Getter
     protected final ScriptRuntime runtime;
     protected final EventBus eventBus;
-    @Getter
-    protected final ResourceManager resourceManager;
     protected WorkerRouter workerRouter;
 
     public ServerVerticle(String host, int port, ScriptRuntime runtime, EventBus eventBus) {
@@ -59,7 +57,6 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         this.runtime = runtime;
         this.port = port;
         this.eventBus = eventBus;
-        this.resourceManager = new ResourceManager();
     }
 
     @Override
@@ -73,6 +70,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
                     log.info("Server verticle {} is listening on {}:{} ", this.deploymentID(), host, port);
                     startPromise.complete();
                 });
+        eventBus.post(new ComponentInitEvent<>(this, EdgeServer.class));
     }
 
 
@@ -87,14 +85,15 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     }
 
     private void injectDependencies(Value value, Deployment deployment) {
-        value.putMember("managedRes", resourceManager);
         var env = new HashMap<>(deployment.env());
         env.put("RUNTIME", "edge");
-        env.put("DEPLOYMENT_SINCE", String.valueOf(System.currentTimeMillis()));
-        env.put("DEPLOYMENT_NAME", deployment.name());
-        value.putMember("env", env);
-        var event = new AsyncWorkerDependencyEvent(value, deployment);
+        env.put("DEPLOY_SINCE", String.valueOf(System.currentTimeMillis()));
+        env.put("DEPLOY_NAME", deployment.name());
+        var plugins = new HashMap<String, Object>();
+        var event = new AsyncWorkerContextEvent(env, plugins, value, deployment);
         eventBus.post(event);
+        value.putMember("env", env);
+        value.putMember("plugins", plugins);
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {

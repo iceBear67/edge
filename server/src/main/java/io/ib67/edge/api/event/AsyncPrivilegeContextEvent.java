@@ -15,19 +15,23 @@
  *
  */
 
-package io.ib67.edge.api.plugin;
+package io.ib67.edge.api.event;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import org.graalvm.polyglot.Value;
 
-import java.util.function.Supplier;
+import java.util.Map;
 
-@RequiredArgsConstructor
-@Getter
-public class ConfigHolder<T extends PluginConfig> {
-    protected final Class<T> type;
-    protected final Supplier<T> initializer;
-    @Setter
-    protected T config;
+/**
+ * This event is fired when a privilege context is initializing its binding. The event has declared several
+ * shared definitions among plugins. When working with new components, you should consider using them first.
+ * @param env The `env` object in privileged contexts
+ * @param plugins The `plugins` object in privileged contexts
+ * @param value The raw value binding.
+ */
+@AsyncEvent
+public record AsyncPrivilegeContextEvent(
+        Map<String, String> env,
+        Map<String, Object> plugins,
+        Value value
+) {
 }

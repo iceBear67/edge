@@ -15,20 +15,18 @@
  *
  */
 
-package io.ib67.edge.resource;
-
-import io.vertx.core.Future;
-
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
-public record Resource<T>(
-        int poolSize,
-        ThreadMode threadMode,
-        Supplier<Future<T>> resourceFactory,
-        Consumer<T> close
-) {
-    enum ThreadMode {
-        THREAD_LOCAL, SHARED, CREATE_ON_DEMAND
+jar {
+    manifest {
+        attributes(Map.of(
+                'Plugin-Class', '',
+                'Plugin-Id', 'hikaricp',
+                'Plugin-Provider', 'edge',
+                'Plugin-Version', project.version
+        ))
     }
+}
+
+dependencies {
+    api pluginLibs.bundles.plugin.rjdbc
+    compileOnly project(":server")
 }
