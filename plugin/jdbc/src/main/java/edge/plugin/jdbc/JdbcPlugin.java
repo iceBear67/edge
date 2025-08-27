@@ -17,6 +17,7 @@
 
 package edge.plugin.jdbc;
 
+import com.google.inject.Inject;
 import io.ib67.edge.api.event.AsyncPrivilegeContextEvent;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.plugin.PluginConfig;
@@ -28,25 +29,25 @@ import io.vertx.jdbcclient.JDBCConnectOptions;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Objects;
 
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class JdbcPlugin implements EdgePlugin<JdbcPlugin.JdbcConfig>, EventListenerHost {
+    protected final EventBus bus;
+    protected final Vertx vertx;
+    protected final JdbcConfig config;
     protected Pool pool;
 
     @Override
-    public String getName() {
-        return "jdbc";
-    }
-
-    @Override
-    public void init(Vertx vertx, EventBus bus, JdbcConfig config) {
+    public void init() {
         this.registerTo(bus);
         pool = JDBCPool.pool(vertx, config.connectOptions(), config.poolOptions());
     }
 
     @SubscribeEvent
-    void registerBinding(AsyncPrivilegeContextEvent event){
+    void registerBinding(AsyncPrivilegeContextEvent event) {
         event.plugins().put("jdbc", pool);
     }
 

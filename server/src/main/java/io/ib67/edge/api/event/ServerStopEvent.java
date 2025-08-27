@@ -19,7 +19,6 @@ package io.ib67.edge.api.event;
 
 import io.ib67.kiwi.event.api.Event;
 
-public enum LifecycleEvents implements Event {
-    SERVER_START,
-    SERVER_STOP;
+public enum ServerStopEvent implements Event {
+    INSTANCE
 }

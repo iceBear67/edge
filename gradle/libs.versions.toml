@@ -7,11 +7,13 @@ vertx = "5.0.3"
 mockito = "5.+"
 log4j = "2.25.1"
 asm = "9.8"
-pf4j="3.13.0"
-kiwi="1.1.0-SNAPSHOT"
-jbanno="26.0.2"
+pf4j = "3.13.0"
+kiwi = "1.1.0-SNAPSHOT"
+jbanno = "26.0.2"
+guice = "7.0.0"
 
 [libraries]
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
 graal-polyglot = { module = "org.graalvm.polyglot:polyglot", version.ref = "polyglot" }
 graal-js = { module = "org.graalvm.polyglot:js", version.ref = "polyglot" }
 vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
@@ -19,16 +21,16 @@ vertx-core = { module = "io.vertx:vertx-core", version.ref = "vertx" }
 jimfs = { module = "com.google.jimfs:jimfs", version.ref = "jimfs" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 pf4j = { module = "org.pf4j:pf4j", version.ref = "pf4j" }
-kiwi-lang = { module = "io.ib67.kiwi:lang", version.ref = "kiwi"}
-kiwi-events = { module = "io.ib67.kiwi:event", version.ref = "kiwi"}
+kiwi-lang = { module = "io.ib67.kiwi:lang", version.ref = "kiwi" }
+kiwi-events = { module = "io.ib67.kiwi:event", version.ref = "kiwi" }
 
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
 log4j-layout-json = { module = "org.apache.logging.log4j:log4j-layout-template-json", version.ref = "log4j" }
 log4j-slf4j-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
 
-asm = {module="org.ow2.asm:asm", version.ref="asm"}
-jetbrains-annotation = {module="org.jetbrains:annotations", version.ref="jbanno"}
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+jetbrains-annotation = { module = "org.jetbrains:annotations", version.ref = "jbanno" }
 
 [bundles]
 log4j = ['log4j-core', 'log4j-api', 'log4j-layout-json']

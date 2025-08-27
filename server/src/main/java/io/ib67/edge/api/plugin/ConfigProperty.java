@@ -17,9 +17,16 @@
 
 package io.ib67.edge.api.plugin;
 
-import org.pf4j.ExtensionPoint;
+import java.lang.annotation.*;
 
-public interface EdgePlugin<T extends PluginConfig> extends ExtensionPoint {
-    //Vertx vertx, EventBus bus, @Nullable("If T is not set") T config
-    void init();
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface ConfigProperty {
+    /**
+     * File name of your config file. You may read others by exploiting this option.
+     * Using your plugin id + .yml is OK and actually recommended!
+     * @return config file name
+     */
+    String value() default "";
 }
