@@ -21,48 +21,32 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.plugin.PluginRegistry;
-import io.ib67.edge.config.ServerConfig;
-import io.ib67.edge.init.PluginInitModule;
-import io.ib67.edge.init.PluginPreInitModule;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.pf4j.*;
 
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class EdgePluginManager extends DefaultPluginManager implements PluginRegistry {
     protected final Map<Class<? extends EdgePlugin>, EdgePlugin> edgePlugins = new HashMap<>();
     protected final ObjectMapper configMapper;
-    protected final GuiceExtensionFactory extensionFactory;
-    protected final Injector parentInjector;
-    protected Injector pluginInjector;
+    protected GuiceExtensionFactory extensionFactory;
 
-    public EdgePluginManager(Injector injector, ObjectMapper configMapper, Path... pluginsRoots) {
+    public EdgePluginManager(ObjectMapper configMapper, Path... pluginsRoots) {
         super(pluginsRoots);
-        this.parentInjector = injector;
         this.configMapper = configMapper;
-        this.extensionFactory = new GuiceExtensionFactory(injector);
     }
 
-    public Injector initPlugins() {
-        var injector = parentInjector;
-        var configInjector = injector.createChildInjector(new PluginPreInitModule(configMapper, this));
-        extensionFactory.injector = configInjector;
-        pluginInjector = configInjector.createChildInjector(
-                new PluginInitModule(
-                        configInjector.getInstance(EdgePluginManager.class),
-                        injector.getInstance(ServerConfig.class)
-                )
-        );
-        extensionFactory.injector = parentInjector;
-        return pluginInjector;
+    @ApiStatus.Internal
+    public void setExtensionInjector(Injector injector) {
+        Objects.requireNonNull(injector);
+        extensionFactory.injector = injector;
     }
 
     @Override
     protected ExtensionFactory createExtensionFactory() {
+        this.extensionFactory = new GuiceExtensionFactory(null);
         return extensionFactory;
     }
 
@@ -75,8 +59,6 @@ public class EdgePluginManager extends DefaultPluginManager implements PluginReg
     protected ExtensionFinder createExtensionFinder() {
         DefaultExtensionFinder extensionFinder = new DefaultExtensionFinder(this);
         addPluginStateListener(extensionFinder);
-        // for debugging convenience and internal plugins.
-//        extensionFinder.addServiceProviderExtensionFinder();
         return extensionFinder;
     }
 

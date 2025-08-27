@@ -19,6 +19,7 @@ package io.ib67.edge.plugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.ib67.edge.Deployment;
 import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.ServerStopEvent;
@@ -37,6 +38,7 @@ import java.nio.file.Path;
 
 @Log4j2
 @RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
 public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlugin.PersistRulesConfig>, EventListenerHost {
     protected final ObjectMapper mapper = new ObjectMapper();
     protected final PersistRulesConfig persistRulesConfig;

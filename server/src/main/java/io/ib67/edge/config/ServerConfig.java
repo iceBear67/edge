@@ -17,7 +17,6 @@
 
 package io.ib67.edge.config;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -26,7 +25,6 @@ public record ServerConfig(
         int listenPort,
         String controlListenHost,
         int controlListenPort, // -1 to disable
-        List<String> enabledPlugins,
         Map<String, String> engineOptions,
         RuntimeConfig runtime
 ) {
@@ -36,7 +34,6 @@ public record ServerConfig(
                 8080,
                 "localhost",
                 8081,
-                List.of(),
                 Map.of(),
                 new RuntimeConfig(
                         "./lib",
@@ -52,7 +49,6 @@ public record ServerConfig(
             throw new IllegalArgumentException("listenPort must be between 0 and 65535");
         }
         engineOptions = engineOptions == null ? Map.of() : engineOptions;
-        enabledPlugins = enabledPlugins == null ? List.of() : enabledPlugins;
         Objects.requireNonNull(runtime);
     }
 

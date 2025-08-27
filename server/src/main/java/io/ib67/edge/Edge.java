@@ -29,9 +29,13 @@ import io.ib67.edge.command.CommandLoop;
 import io.ib67.edge.command.StopCommand;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.init.MainModule;
+import io.ib67.edge.init.PluginInitModule;
+import io.ib67.edge.init.PluginPreInitModule;
 import io.ib67.edge.plugin.EdgePluginManager;
 import io.ib67.kiwi.event.HierarchyEventBus;
 import io.ib67.kiwi.event.api.EventBus;
+import io.ib67.kiwi.routine.Result;
+import io.ib67.kiwi.routine.Uni;
 import io.vertx.core.Vertx;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -58,8 +62,18 @@ public class Edge {
         var serverConfig = loadConfig();
         var bus = new HierarchyEventBus();
         var injector = Guice.createInjector(new MainModule(bus, serverConfig, Vertx.vertx()));
-        var pm = new EdgePluginManager(injector, CONFIG_MAPPER);
-        Edge.defaultInjector = pm.initPlugins();
+        var pm = new EdgePluginManager(CONFIG_MAPPER);
+        pm.setExtensionInjector(injector);
+        var pluginInjector = injector.createChildInjector(new PluginPreInitModule(CONFIG_MAPPER, pm), new PluginInitModule(pm));
+        pm.setExtensionInjector(pluginInjector);
+        Edge.defaultInjector = pluginInjector;
+        Uni.from(pm.getEdgePlugins()::forEach)
+                .map(it -> Result.runAny(it::init))
+                .onItem(result ->
+                        result.onFail(f ->
+                                log.error("Failed to initialize plugin: {}", f.failure())
+                        )
+                );
         log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down server...");
