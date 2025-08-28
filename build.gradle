@@ -70,9 +70,6 @@ def configureJava(Project project) {
             testImplementation platform('org.junit:junit-bom:5.13.4')
             testImplementation 'org.junit.jupiter:junit-jupiter'
             testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-            if (project.name.startsWith("plugin:")) {
-                annotationProcessor libs.pf4j
-            }
         }
     }
 
