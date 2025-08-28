@@ -20,6 +20,5 @@ package io.ib67.edge.api.plugin;
 import org.pf4j.ExtensionPoint;
 
 public interface EdgePlugin<T extends PluginConfig> extends ExtensionPoint {
-    //Vertx vertx, EventBus bus, @Nullable("If T is not set") T config
     void init();
 }

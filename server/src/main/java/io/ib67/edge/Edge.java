@@ -63,8 +63,20 @@ public class Edge {
         var bus = new HierarchyEventBus();
         var injector = Guice.createInjector(new MainModule(bus, serverConfig, Vertx.vertx()));
         var pm = new EdgePluginManager(CONFIG_MAPPER);
+        loadPlugins(pm, injector);
+        log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutting down server...");
+            bus.post(ServerStopEvent.INSTANCE);
+        }));
+        initREPL(bus);
+    }
+
+    private static void loadPlugins(EdgePluginManager pm, Injector injector) {
         pm.setExtensionInjector(injector);
-        var pluginInjector = injector.createChildInjector(new PluginPreInitModule(CONFIG_MAPPER, pm), new PluginInitModule(pm));
+        var pluginInjector = injector.createChildInjector(new PluginPreInitModule(CONFIG_MAPPER, pm));
+        pm.setExtensionInjector(pluginInjector);
+        pluginInjector = pluginInjector.createChildInjector(new PluginInitModule(pm));
         pm.setExtensionInjector(pluginInjector);
         Edge.defaultInjector = pluginInjector;
         Uni.from(pm.getEdgePlugins()::forEach)
@@ -74,12 +86,6 @@ public class Edge {
                                 log.error("Failed to initialize plugin: {}", f.failure())
                         )
                 );
-        log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Shutting down server...");
-            bus.post(ServerStopEvent.INSTANCE);
-        }));
-        initREPL(bus);
     }
 
     private static ServerConfig loadConfig() throws IOException {

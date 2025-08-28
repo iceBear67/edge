@@ -20,6 +20,7 @@ package io.ib67.edge.init;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import io.ib67.edge.api.plugin.EdgePlugin;
+import io.ib67.edge.api.plugin.EdgePluginConfig;
 import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.plugin.EdgePluginManager;
 import io.ib67.kiwi.TypeToken;
@@ -29,12 +30,9 @@ import io.ib67.kiwi.routine.Some;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.pf4j.PluginWrapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
 
 @RequiredArgsConstructor
 @Log4j2
@@ -47,29 +45,10 @@ public class PluginPreInitModule extends AbstractModule {
     @Override
     protected void configure() {
         var configRoot = Path.of(PLUGIN_CONFIG_PATH);
-        if(Files.notExists(configRoot)) {
+        if (Files.notExists(configRoot)) {
             Files.createDirectory(configRoot);
         }
         bind(EdgePluginManager.class).toInstance(pm);
-        pm.loadPlugins();
-        var og = Thread.currentThread().getContextClassLoader();
-        var configMissingPlugins = new HashSet<ClassLoader>();
-        var pluginByCL = new HashMap<ClassLoader, PluginWrapper>();
-        for (PluginWrapper plugin : pm.getPlugins()) {
-            pluginByCL.put(plugin.getPluginClassLoader(), plugin);
-            try {
-                Thread.currentThread().setContextClassLoader(plugin.getPluginClassLoader());
-                var pluginConfigPath = configRoot.resolve(plugin.getPluginId() + ".yml");
-                if (Files.exists(pluginConfigPath)) {
-                    var config = configMapper.readValue(pluginConfigPath.toFile(), PluginConfig.class);
-                    bind((Class<PluginConfig>) config.getClass()).toInstance(config);
-                } else {
-                    configMissingPlugins.add(plugin.getPluginClassLoader());
-                }
-            } finally {
-                Thread.currentThread().setContextClassLoader(og);
-            }
-        }
         var extensions = pm.getExtensionClasses(EdgePlugin.class);
         for (Class<? extends EdgePlugin> extension : extensions) {
             var typeToken = TypeToken.resolve(extension).inferType(EdgePlugin.class)
@@ -78,11 +57,22 @@ public class PluginPreInitModule extends AbstractModule {
                 log.error("Plugin config cannot be array or wildcard type.");
                 continue;
             }
-            var eCL = extension.getClassLoader();
-            if (configMissingPlugins.contains(eCL)) {
-                var plugin = pluginByCL.get(eCL);
-                log.warn("Config for [{}] is missing, will use default config...", plugin.getPluginId());
-                var pluginConfigPath = configRoot.resolve(plugin.getPluginId() + ".yml");
+            var configType = typeToken.getBaseTypeRaw();
+            if (configType == PluginConfig.class) continue; // custom config type does not provided.
+            var anno = configType.getAnnotation(EdgePluginConfig.class);
+            Path pluginConfigPath;
+            if (anno == null) {
+                pluginConfigPath = configRoot.resolve(extension.getSimpleName().toLowerCase() + ".yml");
+                log.warn("@EdgePluginConfig is not annotated on the config {}", configType);
+                log.warn("The default name '{}' will be used.", pluginConfigPath.getFileName());
+            } else {
+                pluginConfigPath = configRoot.resolve(anno.value());
+            }
+            if(Files.exists(pluginConfigPath)) {
+                var config = configMapper.readValue(pluginConfigPath.toFile(), configType);
+                bind((Class<PluginConfig>) configType).toInstance((PluginConfig) config);
+            }else {
+                log.warn("Creating default config for {}...", extension.getCanonicalName());
                 switch (Result.fromAny(() -> typeToken.getBaseTypeRaw().getConstructor().newInstance())) {
                     case Some(PluginConfig config) -> {
                         configMapper.writeValue(pluginConfigPath.toFile(), config);
@@ -90,7 +80,7 @@ public class PluginPreInitModule extends AbstractModule {
                     }
                     case Fail(Throwable throwable) -> log.error(
                             "Cannot save default config for {}, error: {}",
-                            plugin.getPluginId(), throwable.getMessage()
+                            extension.getCanonicalName(), throwable.getMessage()
                     );
                     default -> throw new AssertionError();
                 }
