@@ -37,6 +37,7 @@ public record ServerConfig(
                 Map.of(),
                 new RuntimeConfig(
                         "./lib",
+                        1000,
                         Map.of(),
                         Map.of()
                 )
@@ -54,6 +55,7 @@ public record ServerConfig(
 
     public record RuntimeConfig(
             String pathLibraries,
+            int watchdogThresholdMillis,
             Map<String, String> guestContextOptions,
             Map<String, String> hostContextOptions
     ) {

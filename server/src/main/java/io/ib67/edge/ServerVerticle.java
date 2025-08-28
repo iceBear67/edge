@@ -17,12 +17,14 @@
 
 package io.ib67.edge;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.AsyncWorkerContextEvent;
 import io.ib67.edge.api.event.ComponentInitEvent;
 import io.ib67.edge.api.event.PreRequestEvent;
 import io.ib67.edge.config.ServerConfig;
 import io.ib67.edge.script.ScriptRuntime;
+import io.ib67.edge.script.watchdog.Watchdog;
 import io.ib67.edge.serializer.AnyMessageCodec;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.ib67.edge.worker.ScriptWorker;
@@ -33,14 +35,17 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.net.HostAndPort;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.graalvm.polyglot.Value;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+
+import static java.lang.Math.max;
 
 @Log4j2
 public class ServerVerticle extends AbstractVerticle implements EdgeServer {
@@ -51,6 +56,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     @Getter
     protected final ScriptRuntime runtime;
     protected final EventBus eventBus;
+    protected final Watchdog watchdog;
     protected WorkerRouter workerRouter;
 
     public ServerVerticle(ServerConfig config, ScriptRuntime runtime, EventBus eventBus) {
@@ -58,6 +64,11 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         this.runtime = runtime;
         this.port = config.listenPort();
         this.eventBus = eventBus;
+        this.watchdog = new Watchdog(
+                Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactoryBuilder().setNameFormat("watchdog-%d").build()
+                ), Duration.ofMillis(max(config.runtime().watchdogThresholdMillis(), 50))
+        );
     }
 
     @Override
@@ -80,8 +91,12 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
         return workerRouter.registerWorker(
                 deployment.name(),
                 () -> Result.fromAny(() -> runtime.create(deployment.source(), v -> injectDependencies(v, deployment)))
-                        .map(scriptContext -> new ScriptWorker(scriptContext, deployment, () -> log.info("ScriptWorker {} is shutting down...", deployment.name())))
-                        .orElseThrow()
+                        .map(scriptContext -> new ScriptWorker(
+                                scriptContext,
+                                deployment,
+                                watchdog,
+                                () -> log.info("ScriptWorker {} is shutting down...", deployment.name()))
+                        ).orElseThrow()
         ).onFailure(err -> log.error("Cannot deploy worker for deployment {}", deployment.name(), err));
     }
 
@@ -98,7 +113,7 @@ public class ServerVerticle extends AbstractVerticle implements EdgeServer {
     }
 
     private void onRequest(HttpServerRequest httpServerRequest) {
-        var host = HostAndPort.authority(httpServerRequest.getHeader("Host")).host();
+        var host = httpServerRequest.getHeader("Host");
         var event = new PreRequestEvent(httpServerRequest);
         eventBus.post(event);
         if (event.isIntercepted()) return;

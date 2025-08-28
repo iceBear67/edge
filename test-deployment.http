@@ -13,7 +13,7 @@ Content-Type: application/json
     "file" : null,
     "language" : "js",
     "type" : "string",
-    "data" : "export function handleRequest(request) {request.response().end(`${env.DEPLOYMENT_NAME} is now running on ${env.RUNTIME} with TEST = ${env.TEST}`);\n}\n"
+    "data" : "export function handleRequest(request) {request.response().end(`${env.DEPLOY_NAME} is now running on ${env.RUNTIME} with TEST = ${env.TEST}`); \n}\n"
   }
 }
 ###

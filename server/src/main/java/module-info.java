@@ -15,6 +15,8 @@ module edge.server {
     requires com.fasterxml.jackson.dataformat.yaml;
     requires org.jetbrains.annotations;
     requires com.google.guice;
+    requires io.netty.common;
+    requires com.google.common;
     exports io.ib67.edge.api.script.future;
     exports io.ib67.edge.api.script.http;
     exports io.ib67.edge;

@@ -21,6 +21,7 @@ import io.ib67.edge.Deployment;
 import io.ib67.edge.api.script.RequestHandler;
 import io.ib67.edge.api.script.http.EdgeRequest;
 import io.ib67.edge.script.context.ScriptContext;
+import io.ib67.edge.script.watchdog.Watchdog;
 import io.ib67.edge.serializer.HttpRequestBox;
 import io.vertx.core.eventbus.Message;
 import lombok.Getter;
@@ -37,12 +38,19 @@ public class ScriptWorker extends Worker {
     @Getter
     protected final Deployment deployment;
     protected final Logger log;
+    protected final Watchdog watchdog;
     protected RequestHandler handler;
 
-    public ScriptWorker(ScriptContext context, Deployment deployment, Runnable onClose) {
+    public ScriptWorker(
+            ScriptContext context,
+            Deployment deployment,
+            Watchdog watchdog,
+            Runnable onClose
+    ) {
         super(onClose);
         this.context = context;
         this.deployment = deployment;
+        this.watchdog = watchdog;
         log = LogManager.getLogger("service-" + deployment.name()); // todo log registry
     }
 
@@ -68,11 +76,14 @@ public class ScriptWorker extends Worker {
     @Override
     protected void handleRequest0(Message<HttpRequestBox> objectMessage) {
         var req = objectMessage.body().request();
+        var watchdogCancel = watchdog.setTimeout(context.getScriptContext());
         try {
             handler.handleRequest((EdgeRequest) req);
         } catch (Exception throwable) {
             req.response().setStatusCode(500).end("Script Server Error");
             log.error("Error handling request {}/{}", req.getHeader("Host"), req.path(), throwable);
+        } finally {
+            watchdogCancel.run();
         }
     }
 }
