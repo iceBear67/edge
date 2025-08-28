@@ -42,6 +42,7 @@ dependencies {
 
     compileOnly project(":codegen")
     annotationProcessor project(":codegen")
+    annotationProcessor libs.pf4j
     testImplementation libs.mockito
     mockitoAgent(libs.mockito) {
         transitive = false

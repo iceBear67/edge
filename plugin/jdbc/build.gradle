@@ -15,17 +15,6 @@
  *
  */
 
-jar {
-    manifest {
-        attributes(Map.of(
-                'Plugin-Class', '',
-                'Plugin-Id', 'hikaricp',
-                'Plugin-Provider', 'edge',
-                'Plugin-Version', project.version
-        ))
-    }
-}
-
 dependencies {
     api pluginLibs.bundles.plugin.rjdbc
     compileOnly project(":server")

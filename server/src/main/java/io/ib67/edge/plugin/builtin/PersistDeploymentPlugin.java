@@ -15,15 +15,15 @@
  *
  */
 
-package io.ib67.edge.plugin;
+package io.ib67.edge.plugin.builtin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import io.ib67.edge.Deployment;
 import io.ib67.edge.api.EdgeServer;
 import io.ib67.edge.api.event.ServerStopEvent;
 import io.ib67.edge.api.plugin.EdgePlugin;
+import io.ib67.edge.api.plugin.EdgePluginConfig;
 import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.worker.ScriptWorker;
 import io.ib67.kiwi.event.api.EventBus;
@@ -32,13 +32,14 @@ import io.ib67.kiwi.event.api.annotation.SubscribeEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.pf4j.Extension;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Log4j2
 @RequiredArgsConstructor(onConstructor_ = @Inject)
-@Singleton
+@Extension
 public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlugin.PersistRulesConfig>, EventListenerHost {
     protected final ObjectMapper mapper = new ObjectMapper();
     protected final PersistRulesConfig persistRulesConfig;
@@ -92,6 +93,7 @@ public class PersistDeploymentPlugin implements EdgePlugin<PersistDeploymentPlug
         log.info("All deployments saved without exception!");
     }
 
+    @EdgePluginConfig("persist_deployments.yml")
     public record PersistRulesConfig(
             String savePath
     ) implements PluginConfig {

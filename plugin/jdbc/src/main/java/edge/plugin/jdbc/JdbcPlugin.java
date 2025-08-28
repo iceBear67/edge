@@ -20,6 +20,7 @@ package edge.plugin.jdbc;
 import com.google.inject.Inject;
 import io.ib67.edge.api.event.AsyncPrivilegeContextEvent;
 import io.ib67.edge.api.plugin.EdgePlugin;
+import io.ib67.edge.api.plugin.EdgePluginConfig;
 import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.kiwi.event.api.EventBus;
 import io.ib67.kiwi.event.api.EventListenerHost;
@@ -56,6 +57,7 @@ public class JdbcPlugin implements EdgePlugin<JdbcPlugin.JdbcConfig>, EventListe
         event.plugins().put("jdbc", pool);
     }
 
+    @EdgePluginConfig("vertx_jdbc.yml")
     public record JdbcConfig(
             JDBCConnectOptions connectOptions,
             PoolOptions poolOptions
