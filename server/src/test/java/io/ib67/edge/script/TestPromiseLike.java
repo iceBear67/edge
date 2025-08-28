@@ -19,6 +19,7 @@ package io.ib67.edge.script;
 
 import io.ib67.edge.api.script.AsyncIterator;
 import io.ib67.edge.api.script.ExportToScript;
+import io.ib67.edge.api.script.function.Exports;
 import io.ib67.edge.api.script.future.Thenable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -76,7 +77,7 @@ public class TestPromiseLike {
                 (async function(){
                 try{
                     for await (const element of iterator){
-                        result.collect(element);
+                        result(element);
                         console.log(element);
                     }
                 }catch(error){
@@ -85,7 +86,7 @@ public class TestPromiseLike {
                 })();
                 """);
         var context = Assertions.assertDoesNotThrow(() -> runtime.create(Source.create("js", ""), binding -> {
-            binding.putMember("result", new TestResultCollector(result::add));
+            binding.putMember("result",Exports.export((Consumer<String>) result::add));
             binding.putMember("iterator", asyncIterator);
         }));
         Assertions.assertDoesNotThrow(context::init);

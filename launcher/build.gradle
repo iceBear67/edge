@@ -22,7 +22,8 @@ plugins {
 jar {
     manifest {
         attributes(Map.of(
-                "Premain-Class", "io.ib67.edge.EdgeTransformerAgent"
+                "Premain-Class", "io.ib67.edge.EdgeTransformerAgent",
+                "Can-Retransform-Classes", "true"
         ))
     }
     application.applicationDistribution.with {

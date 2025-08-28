@@ -1,0 +1,2 @@
+@io.ib67.edge.api.script.ExportToScript
+IMPLEMENT io/ib67/edge/script/TestPromiseLike$Exported
