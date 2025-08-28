@@ -80,6 +80,7 @@ public class Edge {
         pm.setExtensionInjector(pluginInjector);
         Edge.defaultInjector = pluginInjector;
         Uni.from(pm.getEdgePlugins()::forEach)
+                .peek(it -> log.info("Loading plugin {}", it.getClass().getCanonicalName()))
                 .map(it -> Result.runAny(it::init))
                 .onItem(result ->
                         result.onFail(f ->

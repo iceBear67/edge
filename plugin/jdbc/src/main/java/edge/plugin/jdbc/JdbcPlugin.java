@@ -30,10 +30,14 @@ import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.pf4j.Extension;
 
 import java.util.Objects;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
+@Extension
+@Log4j2
 public class JdbcPlugin implements EdgePlugin<JdbcPlugin.JdbcConfig>, EventListenerHost {
     protected final EventBus bus;
     protected final Vertx vertx;
@@ -44,6 +48,7 @@ public class JdbcPlugin implements EdgePlugin<JdbcPlugin.JdbcConfig>, EventListe
     public void init() {
         this.registerTo(bus);
         pool = JDBCPool.pool(vertx, config.connectOptions(), config.poolOptions());
+        log.info("JDBC Pool has been initialized!");
     }
 
     @SubscribeEvent
