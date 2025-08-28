@@ -26,7 +26,7 @@ import java.util.List;
 
 public class AnnotationEnhancer extends ClassVisitor {
     public enum EnhanceType {
-        STARTS_WITH, CLASS, METHOD, FIELD
+        STARTS_WITH, CLASS, METHOD, FIELD, IMPLEMENT
     }
 
     public interface EnhanceRule {
@@ -56,7 +56,19 @@ public class AnnotationEnhancer extends ClassVisitor {
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         currentVisitingClass = "L" + name + ";";
         allowAll = null;
-        for (EnhanceRule rule : rules) {
+        out: for (EnhanceRule rule : rules) {
+            for (String anInterface : interfaces) {
+                if(anInterface.contains("io/ib67/edge/script")){
+                    System.out.println(1);
+                }
+                if(rule.shouldEnhance(EnhanceType.IMPLEMENT, anInterface)) {
+                    visitAnnotation(rule.descriptor(), true);
+                    if (verbose) {
+                        System.out.println("IMPLEMENT " + name);
+                    }
+                    break out;
+                }
+            }
             if (rule.shouldEnhance(EnhanceType.CLASS, name)) {
                 visitAnnotation(rule.descriptor(), true);
                 if (verbose) {
