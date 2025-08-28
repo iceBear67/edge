@@ -19,9 +19,13 @@ package io.ib67.edge.api.script.function;
 
 import io.ib67.edge.api.script.ExportToScript;
 
+import java.util.Objects;
 import java.util.function.BiConsumer;
 
-public record ExportedBiConsumer<A,B>(BiConsumer<A,B> bi) implements BiConsumer<A,B> {
+public record ExportedBiConsumer<A,B>(BiConsumer<A,B> bi) implements BiConsumer<A,B>, ExportedFunctionalInterface {
+    public ExportedBiConsumer {
+        Objects.requireNonNull(bi);
+    }
     @Override
     @ExportToScript
     public void accept(A a, B b) {

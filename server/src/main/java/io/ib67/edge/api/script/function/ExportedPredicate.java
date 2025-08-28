@@ -19,9 +19,13 @@ package io.ib67.edge.api.script.function;
 
 import io.ib67.edge.api.script.ExportToScript;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
-public record ExportedPredicate<U>(Predicate<U> predicate) implements Predicate<U> {
+public record ExportedPredicate<U>(Predicate<U> predicate) implements Predicate<U> , ExportedFunctionalInterface{
+    public ExportedPredicate {
+        Objects.requireNonNull(predicate);
+    }
     @Override
     @ExportToScript
     public boolean test(U u) {

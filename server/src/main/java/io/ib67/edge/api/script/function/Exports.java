@@ -19,6 +19,10 @@ package io.ib67.edge.api.script.function;
 
 import java.util.function.*;
 
+/**
+ * A utility to create exported functional interface wrappers conveniently.
+ * @implNote All these util methods should be named in `export` prefix. Also check its unit test first.
+ */
 public class Exports {
     public static <A,B> ExportedBiConsumer<A,B> export(BiConsumer<A,B> consumer) {
         return new ExportedBiConsumer<>(consumer);
