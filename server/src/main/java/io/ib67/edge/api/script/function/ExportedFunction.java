@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @ExportToScript
-public record ExportedFunction<I,O>(Function<I,O> fn) implements Function<I, O> {
+public record ExportedFunction<I,O>(Function<I,O> fn) implements Function<I, O>, ExportedFunctionalInterface {
     public ExportedFunction {
         Objects.requireNonNull(fn);
     }

@@ -58,9 +58,6 @@ public class AnnotationEnhancer extends ClassVisitor {
         allowAll = null;
         out: for (EnhanceRule rule : rules) {
             for (String anInterface : interfaces) {
-                if(anInterface.contains("io/ib67/edge/script")){
-                    System.out.println(1);
-                }
                 if(rule.shouldEnhance(EnhanceType.IMPLEMENT, anInterface)) {
                     visitAnnotation(rule.descriptor(), true);
                     if (verbose) {

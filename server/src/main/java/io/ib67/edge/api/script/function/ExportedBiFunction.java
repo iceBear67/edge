@@ -19,9 +19,13 @@ package io.ib67.edge.api.script.function;
 
 import io.ib67.edge.api.script.ExportToScript;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 
-public record ExportedBiFunction<A,B,C>(BiFunction<A,B,C> biFunction) implements BiFunction<A,B,C> {
+public record ExportedBiFunction<A,B,C>(BiFunction<A,B,C> biFunction) implements BiFunction<A,B,C>, ExportedFunctionalInterface {
+    public ExportedBiFunction {
+        Objects.requireNonNull(biFunction);
+    }
     @Override
     @ExportToScript
     public C apply(A a, B b) {

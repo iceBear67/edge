@@ -17,20 +17,5 @@
 
 package io.ib67.edge.api.script.function;
 
-import io.ib67.edge.api.script.ExportToScript;
-
-import java.util.Objects;
-import java.util.function.Consumer;
-
-@ExportToScript
-public record ExportedConsumer<T>(Consumer<T> consumer) implements Consumer<T>, ExportedFunctionalInterface {
-    public ExportedConsumer {
-        Objects.requireNonNull(consumer);
-    }
-
-    @Override
-    @ExportToScript
-    public void accept(T t){
-        consumer.accept(t);
-    }
+public interface ExportedFunctionalInterface {
 }
