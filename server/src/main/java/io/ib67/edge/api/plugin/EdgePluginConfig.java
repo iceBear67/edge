@@ -22,9 +22,9 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface ConfigProperty {
+public @interface EdgePluginConfig {
     /**
-     * File name of your config file. You may read others by exploiting this option.
+     * File name of your config file.
      * Using your plugin id + .yml is OK and actually recommended!
      * @return config file name
      */
