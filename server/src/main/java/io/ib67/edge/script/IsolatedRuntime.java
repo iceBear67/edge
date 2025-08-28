@@ -19,6 +19,7 @@ package io.ib67.edge.script;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.jimfs.Jimfs;
+import io.ib67.edge.Edge;
 import io.ib67.edge.api.event.AsyncPrivilegeContextEvent;
 import io.ib67.edge.api.script.ExportToScript;
 import io.ib67.edge.script.context.IncrementalModuleContext;
@@ -139,6 +140,7 @@ public class IsolatedRuntime extends ScriptRuntime {
         );
         binding.putMember("env", event.env());
         binding.putMember("plugins", event.plugins());
+        binding.putMember("injector", Edge.getDefaultInjector());
         return new ModuleContext(scriptContext, stubLocator);
     }
 

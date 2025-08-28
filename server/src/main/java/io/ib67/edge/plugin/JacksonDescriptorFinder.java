@@ -17,11 +17,12 @@
 
 package io.ib67.edge.plugin;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.pf4j.PluginDependency;
 import org.pf4j.PluginDescriptor;
 import org.pf4j.PluginDescriptorFinder;
@@ -57,13 +58,14 @@ public class JacksonDescriptorFinder implements PluginDescriptorFinder {
                 return configMapper.readValue(is, SimplePluginDescriptor.class);
             }
         } catch (IOException e) {
-            throw new PluginRuntimeException("Cannot open plugin", e);
+            throw new PluginRuntimeException("Cannot open plugin: "+e.getMessage(), e);
         }
     }
 
-    @RequiredArgsConstructor
+    @AllArgsConstructor
     @Getter
-    static final class SimplePluginDescriptor implements PluginDescriptor {
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class SimplePluginDescriptor implements PluginDescriptor {
         @JsonProperty("id")
         private final String pluginId;
         @JsonProperty("description")
@@ -77,6 +79,10 @@ public class JacksonDescriptorFinder implements PluginDescriptorFinder {
         @JsonProperty("dependencies")
         @Getter(AccessLevel.PRIVATE)
         private final List<String> _dependencies;
+
+        public SimplePluginDescriptor(){
+            this("","","","","","","",List.of());
+        }
 
         public List<PluginDependency> getDependencies() {
             return _dependencies.stream().map(PluginDependency::new).toList();

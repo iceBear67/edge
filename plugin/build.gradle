@@ -19,4 +19,15 @@ subprojects {
     dependencies {
         annotationProcessor libs.pf4j
     }
+    tasks.register('uberJar', Jar) {
+        archiveClassifier = 'uber'
+
+        from sourceSets.main.output
+
+        dependsOn configurations.runtimeClasspath
+        from {
+            duplicatesStrategy = DuplicatesStrategy.WARN
+            configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+        }
+    }
 }

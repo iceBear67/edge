@@ -24,9 +24,7 @@ import io.ib67.edge.api.plugin.EdgePluginConfig;
 import io.ib67.edge.api.plugin.PluginConfig;
 import io.ib67.edge.plugin.EdgePluginManager;
 import io.ib67.kiwi.TypeToken;
-import io.ib67.kiwi.routine.Fail;
 import io.ib67.kiwi.routine.Result;
-import io.ib67.kiwi.routine.Some;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -49,6 +47,7 @@ public class PluginPreInitModule extends AbstractModule {
             Files.createDirectory(configRoot);
         }
         bind(EdgePluginManager.class).toInstance(pm);
+        pm.loadPlugins();
         var extensions = pm.getExtensionClasses(EdgePlugin.class);
         for (Class<? extends EdgePlugin> extension : extensions) {
             var typeToken = TypeToken.resolve(extension).inferType(EdgePlugin.class)
@@ -58,7 +57,8 @@ public class PluginPreInitModule extends AbstractModule {
                 continue;
             }
             var configType = typeToken.getBaseTypeRaw();
-            if (configType == PluginConfig.class) continue; // custom config type does not provided.
+            if (configType == PluginConfig.class || configType == null)
+                continue; // custom config type are not provided.
             var anno = configType.getAnnotation(EdgePluginConfig.class);
             Path pluginConfigPath;
             if (anno == null) {
@@ -68,22 +68,24 @@ public class PluginPreInitModule extends AbstractModule {
             } else {
                 pluginConfigPath = configRoot.resolve(anno.value());
             }
-            if(Files.exists(pluginConfigPath)) {
-                var config = configMapper.readValue(pluginConfigPath.toFile(), configType);
-                bind((Class<PluginConfig>) configType).toInstance((PluginConfig) config);
-            }else {
-                log.warn("Creating default config for {}...", extension.getCanonicalName());
-                switch (Result.fromAny(() -> typeToken.getBaseTypeRaw().getConstructor().newInstance())) {
-                    case Some(PluginConfig config) -> {
-                        configMapper.writeValue(pluginConfigPath.toFile(), config);
-                        bind((Class<PluginConfig>) config.getClass()).toInstance(config);
-                    }
-                    case Fail(Throwable throwable) -> log.error(
-                            "Cannot save default config for {}, error: {}",
-                            extension.getCanonicalName(), throwable.getMessage()
-                    );
-                    default -> throw new AssertionError();
+            try {
+                if (Files.exists(pluginConfigPath)) {
+                    var config = configMapper.readValue(pluginConfigPath.toFile(), configType);
+                    bind((Class<PluginConfig>) configType).toInstance((PluginConfig) config);
+                } else {
+                    log.warn("Creating default config for {}...", extension.getCanonicalName());
+                    Result.fromAny(() -> (PluginConfig) typeToken.getBaseTypeRaw().getConstructor().newInstance())
+                            .flatMapResult(config -> Result.runAny(() -> {
+                                configMapper.writeValue(pluginConfigPath.toFile(), config);
+                                bind((Class<PluginConfig>) config.getClass()).toInstance(config);
+                            }))
+                            .onFail(fail -> log.error(
+                                    "Cannot save default config for {}, error: {}",
+                                    extension.getCanonicalName(), fail.failure()
+                            ));
                 }
+            } catch (Exception e) {
+                log.error("Error loading config for {}", extension.getCanonicalName(), e);
             }
         }
     }

@@ -43,6 +43,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 @Log4j2
@@ -62,7 +63,7 @@ public class Edge {
         var serverConfig = loadConfig();
         var bus = new HierarchyEventBus();
         var injector = Guice.createInjector(new MainModule(bus, serverConfig, Vertx.vertx()));
-        var pm = new EdgePluginManager(CONFIG_MAPPER);
+        var pm = new EdgePluginManager(Path.of("plugins"));
         loadPlugins(pm, injector);
         log.info("Server started! ({}s)", (System.currentTimeMillis() - begin) / 1000);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

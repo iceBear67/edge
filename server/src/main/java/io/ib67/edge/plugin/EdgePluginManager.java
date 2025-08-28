@@ -17,7 +17,9 @@
 
 package io.ib67.edge.plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Injector;
 import io.ib67.edge.api.plugin.EdgePlugin;
 import io.ib67.edge.api.plugin.PluginRegistry;
@@ -30,18 +32,26 @@ import java.util.*;
 
 public class EdgePluginManager extends DefaultPluginManager implements PluginRegistry {
     protected final Map<Class<? extends EdgePlugin>, EdgePlugin> edgePlugins = new HashMap<>();
-    protected final ObjectMapper configMapper;
     protected GuiceExtensionFactory extensionFactory;
 
-    public EdgePluginManager(ObjectMapper configMapper, Path... pluginsRoots) {
+    public EdgePluginManager(Path... pluginsRoots) {
         super(pluginsRoots);
-        this.configMapper = configMapper;
     }
 
     @ApiStatus.Internal
     public void setExtensionInjector(Injector injector) {
         Objects.requireNonNull(injector);
         extensionFactory.injector = injector;
+    }
+
+    @Override
+    public PluginWrapper getPlugin(String pluginId) {
+        var pl = super.getPlugin(pluginId);
+        // dirty hack for loading extensions without started plugins.
+        // this behaviour is based on AbstaactExtensionFinder#find(type, id), which
+        // requires plugin state is STARTED to load extensions.
+        pl.setPluginState(PluginState.STARTED);
+        return pl;
     }
 
     @Override
@@ -52,7 +62,11 @@ public class EdgePluginManager extends DefaultPluginManager implements PluginReg
 
     @Override
     protected PluginDescriptorFinder createPluginDescriptorFinder() {
-        return new JacksonDescriptorFinder(configMapper, "plugin.yml");
+        var mapper =  YAMLMapper.builder()
+                .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
+                .configure(SerializationFeature.INDENT_OUTPUT, true)
+                .build();
+        return new JacksonDescriptorFinder(mapper, "plugin.yml");
     }
 
     @Override

@@ -33,7 +33,7 @@ public record ComponentInitEvent<T>(T component, Class<T> preferredType) impleme
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeToken<ComponentInitEvent> type() {
         return TypeToken.getParameterized(ComponentInitEvent.class, preferredType);
     }
 }

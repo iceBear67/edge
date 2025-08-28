@@ -16,6 +16,8 @@
  */
 
 dependencies {
-    api pluginLibs.bundles.plugin.rjdbc
+    api(pluginLibs.bundles.plugin.rjdbc) {
+        exclude group: 'io.vertx', module: 'vertx-core'
+    }
     compileOnly project(":server")
 }
