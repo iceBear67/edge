@@ -18,6 +18,7 @@
 package io.ib67.edge.api.script.future;
 
 import io.ib67.edge.api.script.ExportToScript;
+import io.ib67.edge.api.script.MixinHelper;
 import io.ib67.edge.mixin.Mixin;
 import io.vertx.core.Future;
 import org.graalvm.polyglot.Value;
@@ -27,12 +28,9 @@ import java.util.function.BiConsumer;
 /**
  * this interface will be mixed into {@link io.vertx.core.Future}
  */
+@SuppressWarnings("rawtypes")
 @Mixin(Future.class)
-public interface Thenable {
-    @SuppressWarnings("rawtypes")
-    private Future $() {
-        return (Future) this;
-    }
+public interface Thenable extends MixinHelper<Future> {
 
     @SuppressWarnings("unchecked")
     @ExportToScript

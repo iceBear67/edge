@@ -83,6 +83,10 @@ public class TestPromiseLike {
         thenable.then(onResolve, onReject);
         assertFalse(onResolveCalled.get());
         assertTrue(onRejectCalled.get());
+        Thenable.from((va, v2) -> {
+            assertEquals(va, onResolve);
+            assertEquals(v2, onReject);
+        }).then(onResolve, onReject);
     }
 
     @Test
@@ -105,13 +109,14 @@ public class TestPromiseLike {
         };
         var result = new ArrayList<String>();
         var elements = List.of("a", "b", "c");
-        var asyncIterator = ProxyIterable.from(() -> (Iterator<Object>) (Object) new AsyncIterator<>(vertx, elements.iterator(), 1));
+        var steps = 2;
+        var iter = new AsyncIterator<>(vertx, elements.iterator(), steps);
+        var asyncIterator = ProxyIterable.from(() -> (Iterator<Object>) (Object) iter);
         var source = Source.create("js", """
                 (async function(){
                 try{
                     for await (const element of iterator){
                         result(element);
-                        console.log(element);
                     }
                 }catch(error){
                     console.error(error)
@@ -125,7 +130,7 @@ public class TestPromiseLike {
         Assertions.assertDoesNotThrow(context::init);
         context.eval(source);
 
-        assertEquals(c.get(), result.size());
+        assertEquals(c.get(), Math.floorDiv(result.size(), steps));
         assertEquals(elements, result);
     }
 

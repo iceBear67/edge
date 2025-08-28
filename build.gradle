@@ -64,6 +64,7 @@ def configureJava(Project project) {
         }
         test {
             useJUnitPlatform()
+            finalizedBy jacocoTestReport
         }
 
         dependencies {
