@@ -4,14 +4,14 @@
       "Console": {
         "name": "CONSOLE",
         "PatternLayout": {
-          "pattern": "%d{MM-dd HH:mm:ss} %t [%p] %c{1}: %m%n"
+          "pattern": "%highlight{%d{MM-dd HH:mm:ss} %t [%p]} %highlight{%c{1}: %m%n}{INFO=WHITE}"
         }
       },
       "RollingFile": [
         {
           "name": "FILE",
           "fileName": "logs/app.log",
-          "filePattern": "logs/server.%d{yyyy-MM-dd}.%i.log",
+          "filePattern": "logs/app.%d{yyyy-MM-dd}.%i.log",
           "JsonTemplateLayout": {},
           "Policies": {
             "TimeBasedTriggeringPolicy": {}
@@ -29,7 +29,7 @@
           },
           {
             "ref": "FILE",
-            "level": "ERROR"
+            "level": "INFO"
           }
         ]
       }

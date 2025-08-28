@@ -49,6 +49,10 @@ run {
 dependencies {
     api libs.asm
     runtimeOnly project(":server")
+    def sideloadPlugins = System.getProperty("edge.sideload.plugins","").split(",")
+    for (final def sideload in sideloadPlugins) {
+        runtimeOnly(project(":$sideload"))
+    }
     testImplementation project(":server")
 }
 tasks {
